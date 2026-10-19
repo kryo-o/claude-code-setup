@@ -107,6 +107,7 @@
     "security-guidance@claude-plugins-official": true,
     "claude-security@claude-plugins-official": true,
     "mattpocock-skills@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
     "cc-plugin-you-should-know@builtin": true,
     "caveman@caveman": true,
     "ponytail@ponytail": true,

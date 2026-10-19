@@ -1,0 +1,19 @@
+name: Bug report
+description: Something in the template or install script doesn't work
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead. Paste the shortest error that shows the problem.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Output of `claude --version` and `sw_vers -productVersion`, plus the template version.
+      placeholder: "Claude Code 2.1.303, macOS 26.0, template 1.0.0"
+    validations:
+      required: true

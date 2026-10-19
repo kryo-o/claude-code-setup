@@ -1,0 +1,25 @@
+name: deny-guard false positive or miss
+description: The hook blocked a safe command, or let a dangerous one through
+labels: [deny-guard]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - Blocked a safe command (false positive)
+        - Allowed a dangerous command (miss)
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: The command
+      description: The exact command text. For a serious bypass, use private reporting instead (see SECURITY.md).
+    validations:
+      required: true
+  - type: input
+    id: reason
+    attributes:
+      label: Block message
+      description: The reason the hook gave, if it blocked the command.

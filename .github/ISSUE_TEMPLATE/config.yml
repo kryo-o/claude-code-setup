@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security bypass privately
+    url: https://github.com/kryo-o/claude-code-setup/security/advisories/new
+    about: For ways past the sandbox or permission rules. Please don't post these publicly.
