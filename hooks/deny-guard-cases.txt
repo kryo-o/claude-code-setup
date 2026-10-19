@@ -55,12 +55,20 @@ BLOCK|git config protocol.ext.allow always
 BLOCK|git fetch --upl='touch x' origin
 BLOCK|git push --rece=evil origin main
 BLOCK|git push --ex=evil origin main
+BLOCK|git push --e=evil origin main
 BLOCK|gh auth status -t
 BLOCK|gh auth status -ht github.com
 BLOCK|gh auth login --with-token
 BLOCK|gh api -X Delete repos/someone/repo
 BLOCK|gh api -XDELETE repos/someone/repo
 BLOCK|gh api graphql -f query='mutation { deleteRepository(input:{}) { clientMutationId } }'
+BLOCK|git config core.SSHCommand evil
+BLOCK|git config URL.x.InsteadOf y
+BLOCK|gh auth git-credential get
+BLOCK|git credential fill
+BLOCK|gh api graphql --input q.json
+BLOCK|gh api graphql -F query=@q.graphql
+BLOCK|gh api --method POST graphql -f query='mutation { x }'
 ALLOW|gh auth status
 ALLOW|git ls-remote --exit-code origin
 ALLOW|gh api graphql -f query='query { viewer { login } }'

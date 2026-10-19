@@ -69,15 +69,19 @@ has 'osascript.*delete' && deny "osascript delete is denied"
 
 # --- git and gh run outside the sandbox (excludedCommands), so block what turns them into code execution ---
 # git accepts any unique prefix of a long option (--upl=, --rece=, --ex=), so match the shortest forms.
-has 'git\s+(push|fetch|pull|ls-remote)\b.*--(upl|rece|ex[^i])' && deny "git --upload-pack/--receive-pack/--exec is denied"
+has 'git\s+(push|fetch|pull|ls-remote)\b.*--(upl|rece|ex[^i]|e(=|\s|$))' && deny "git --upload-pack/--receive-pack/--exec is denied"
 has 'git\s+(-c|--config-env)(\s|=)' && deny "git -c config override is denied"
 has 'GIT_(SSH|SSH_COMMAND|EXEC_PATH|ASKPASS|PROXY_COMMAND|CONFIG_COUNT|CONFIG_KEY_|CONFIG_VALUE_|CONFIG_PARAMETERS|CONFIG_GLOBAL|CONFIG_SYSTEM)' && deny "git environment overrides are denied"
-has 'git\s+config\b.*(core\.(sshCommand|hooksPath|fsmonitor|gitProxy)|protocol\..*allow|insteadOf)' && deny "git config keys that run commands are denied"
+# git config keys are case-insensitive (core.SSHCommand works), so match with -i.
+grep -qiE 'git\s+config\b.*(core\.(sshCommand|hooksPath|fsmonitor|gitProxy)|protocol\..*allow|insteadOf)' <<< "$TEXT" && deny "git config keys that run commands are denied"
+has 'git\s+credential\b' && deny "git credential is denied"
 has 'gh\s+(extension|alias)\b' && deny "gh extensions and aliases are denied"
-has 'gh\s+auth\s+(token|login|logout|refresh|setup-git|switch)|--show-token|gh\s+auth\s+status\b.*\s-[a-zA-Z]*t' && deny "gh auth commands that touch the token are denied"
+has 'gh\s+auth\s+(token|login|logout|refresh|setup-git|switch|git-credential)|--show-token|gh\s+auth\s+status\b.*\s-[a-zA-Z]*t' && deny "gh auth commands that touch the token are denied"
 has 'gh\s+repo\s+delete' && deny "gh repo delete is denied"
 grep -qiE 'gh\s+api\b.*(-X|--method)[[:space:]=]*delete' <<< "$TEXT" && deny "gh api DELETE is denied"
-grep -qiE 'gh\s+api\s+graphql\b.*mutation' <<< "$TEXT" && deny "gh api graphql mutations are denied"
+grep -qiE 'gh\s+api\b.*\bgraphql\b.*mutation' <<< "$TEXT" && deny "gh api graphql mutations are denied"
+# A query read from a file (--input, -F query=@file) can't be checked for mutations, so deny it.
+has 'gh\s+api\b.*\bgraphql\b.*(--input|=@)' && deny "gh api graphql with a query from a file is denied"
 
 # --- delete APIs inside interpreters (python, node, ruby) ---
 has 'os\.(remove|removedirs)|shutil\.rmtree|\.unlink\(|(rmSync|rmdirSync|unlinkSync)|fs\.(promises\.)?(rm|rmdir|unlink)\(|FileUtils\.rm|File\.delete' \

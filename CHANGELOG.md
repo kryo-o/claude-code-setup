@@ -2,6 +2,12 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-19
+
+### Fixed
+- deny-guard: `gh api graphql` with a query read from a file (`--input`, `-F query=@file`) bypassed the mutation check. Such queries are now denied, and the mutation check also matches when `graphql` comes after other options.
+- deny-guard: git config keys are matched case-insensitively (`core.SSHCommand`), and `git credential` and `gh auth git-credential` are blocked. `git push --e=` (the shortest abbreviation of `--exec`) is caught. 8 new guard test cases.
+
 ## [1.1.0] - 2026-10-19
 
 ### Added
@@ -42,6 +48,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.0
 [1.0.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.0.0
