@@ -1,0 +1,149 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "deny": [
+      "Read(~/Library/Mobile Documents/com~apple~CloudDocs/**)",
+      "Edit(~/Library/Mobile Documents/com~apple~CloudDocs/**)",
+      "Bash(*CloudDocs*)",
+      "Bash(*Mobile Documents*)",
+      "Bash(*com~apple~CloudDocs*)",
+      "Read(~/.ssh/id_*)",
+      "Read(~/.ssh/*.pem)",
+      "Bash(*~/.ssh/id_*)",
+      "Bash(*~/.ssh/*.pem*)",
+      "Read(~/.aws/credentials)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.azure/**)",
+      "Bash(*.aws/credentials*)",
+      "Bash(*.config/gcloud/**)",
+      "Bash(*.azure/**)",
+      "Read(~/Library/Application Support/Google/Chrome/**/Cookies)",
+      "Read(~/Library/Application Support/Google/Chrome/**/Login Data)",
+      "Read(~/Library/Application Support/BraveSoftware/**/Cookies)",
+      "Read(~/Library/Application Support/BraveSoftware/**/Login Data)",
+      "Read(~/Library/Application Support/Firefox/**/cookies.sqlite)",
+      "Read(~/Library/Application Support/Firefox/**/logins.json)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/.zsh_history)",
+      "Read(~/.bash_history)",
+      "Bash(*~/.zsh_history*)",
+      "Bash(*~/.bash_history*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.npmrc)",
+      "Read(~/.netrc)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.kube/config)",
+      "Read(~/.config/gh/hosts.yml)",
+      "Bash(*.gnupg/*)",
+      "Bash(*| sh)",
+      "Bash(*|sh)",
+      "Bash(*| bash)",
+      "Bash(*|bash)",
+      "Bash(*| zsh)",
+      "Bash(*|zsh)",
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(git branch -D*)",
+      "Bash(sudo*)"
+    ],
+    "ask": [
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(python -m pip install *)",
+      "Bash(python3 -m pip install *)",
+      "Bash(npm install)",
+      "Bash(npm install *)",
+      "Bash(npm i)",
+      "Bash(npm i *)",
+      "Bash(npx *)",
+      "Bash(yarn add *)",
+      "Bash(yarn global add *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm install)",
+      "Bash(pnpm install *)",
+      "Bash(brew install *)",
+      "Bash(brew tap *)",
+      "Bash(brew trust *)",
+      "Bash(brew untrust *)",
+      "Bash(brew autoupdate *)",
+      "Bash(brew upgrade*)",
+      "Bash(gem install *)",
+      "Bash(cargo install *)",
+      "Bash(go install *)",
+      "Bash(uv tool *)",
+      "Bash(launchctl load *)",
+      "Bash(launchctl bootstrap *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/deny-guard.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$HOME/.claude/statusline.sh\""
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false
+  },
+  "enabledPlugins": {
+    "security-guidance@claude-plugins-official": true,
+    "claude-security@claude-plugins-official": true,
+    "mattpocock-skills@claude-plugins-official": true,
+    "cc-plugin-you-should-know@builtin": true,
+    "caveman@caveman": true,
+    "ponytail@ponytail": true,
+    "humanizer@humanizer": true,
+    "blast-radius@claude-code-playground-mods": true,
+    "replay-theater@claude-code-playground-mods": true,
+    "reflect-mod@vendored-mods": true,
+    "cache-tax@vendored-mods": true,
+    "commercial-legal@claude-for-legal": true,
+    "privacy-legal@claude-for-legal": true,
+    "claude-seo@agricidaniel-claude-seo": true,
+    "nateherk-design@nateherk": true
+  },
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": { "source": "github", "repo": "JuliusBrussee/caveman" }
+    },
+    "ponytail": {
+      "source": { "source": "github", "repo": "DietrichGebert/ponytail" }
+    },
+    "humanizer": {
+      "source": { "source": "github", "repo": "blader/humanizer" }
+    },
+    "claude-for-legal": {
+      "source": { "source": "github", "repo": "anthropics/claude-for-legal" }
+    },
+    "agricidaniel-claude-seo": {
+      "source": { "source": "github", "repo": "AgriciDaniel/claude-seo" }
+    },
+    "nateherk": {
+      "source": { "source": "github", "repo": "nateherkai/scroll-craft" }
+    },
+    "claude-code-playground-mods": {
+      "source": { "source": "directory", "path": "__HOME__/.claude/mods/claude-code-playground/claude-code/mods" }
+    },
+    "vendored-mods": {
+      "source": { "source": "directory", "path": "__HOME__/.claude/mods/vendored-mods" }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "vendored-mods",
+  "owner": { "name": "local" },
+  "metadata": {
+    "description": "Reviewed, frozen copies of third-party mods. Update only by re-reviewing and copying in by hand."
+  },
+  "plugins": [
+    {
+      "name": "reflect-mod",
+      "source": "./reflect-mod",
+      "description": "reflect-mod 3.3.0 from bayramannakov/claude-reflect @ b6c42326903af3dd2bf3772b979730a44d8548ca, reviewed 2026-10-19"
+    },
+    {
+      "name": "cache-tax",
+      "source": "./cache-tax",
+      "description": "cache-tax 2.2.1 from karanb192/claude-code-mods @ 06cac47ec125a41a4aeeb78a6b006bec8cc6d6ed, reviewed 2026-10-19"
+    }
+  ]
+}
