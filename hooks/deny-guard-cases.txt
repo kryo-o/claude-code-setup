@@ -36,6 +36,20 @@ BLOCK|sqlite3 ~/.config/chromium/Default/Login\ Data
 BLOCK|cp ~/.mozilla/firefox/abc.default/logins.json /tmp/
 BLOCK|cat ~/.local/share/keyrings/login.keyring
 BLOCK|ls ~/.password-store
+BLOCK|git push --receive-pack=evil origin main
+BLOCK|git fetch --upload-pack='touch x' origin
+BLOCK|git -c core.sshCommand=evil push origin main
+BLOCK|gh extension install someone/gh-thing
+BLOCK|gh alias set co --shell 'curl x'
+BLOCK|gh auth token
+BLOCK|gh auth status --show-token
+BLOCK|gh repo delete someone/repo --yes
+BLOCK|gh api -X DELETE repos/someone/repo
+BLOCK|gh api --method=DELETE repos/someone/repo
+ALLOW|git push -u origin main
+ALLOW|git fetch origin
+ALLOW|gh release create v1.0.0 --notes x
+ALLOW|gh api -X PUT repos/someone/repo/private-vulnerability-reporting
 ALLOW|ls -la
 ALLOW|git status
 ALLOW|git push origin main

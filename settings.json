@@ -55,6 +55,12 @@
       "Edit(~/Library/LaunchAgents/**)",
       "Edit(~/.config/systemd/user/**)",
       "Edit(~/.config/autostart/**)",
+      "Edit(**/.git/hooks/**)",
+      "Edit(**/.git/config)",
+      "Bash(gh extension *)",
+      "Bash(gh alias *)",
+      "Bash(gh auth token*)",
+      "Bash(gh repo delete*)",
       "Read(~/.zsh_history)",
       "Read(~/.bash_history)",
       "Bash(*~/.zsh_history*)",
@@ -111,7 +117,9 @@
       "Bash(launchctl load *)",
       "Bash(launchctl bootstrap *)",
       "Bash(gh *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)"
     ]
   },
   "hooks": {
@@ -135,7 +143,7 @@
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
-    "excludedCommands": ["gh *", "git fetch *", "git pull *", "git push *"]
+    "excludedCommands": ["gh repo *", "gh release *", "gh pr *", "gh issue *", "gh api *", "gh auth status", "git fetch *", "git pull *", "git push *"]
   },
   "enabledPlugins": {
     "security-guidance@claude-plugins-official": true,

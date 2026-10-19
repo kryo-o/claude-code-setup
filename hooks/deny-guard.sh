@@ -67,6 +67,14 @@ has 'git\s+clean\s+.*-[a-zA-Z]*f[a-zA-Z]*d|git\s+clean\s+.*-[a-zA-Z]*d[a-zA-Z]*f
 has 'git\s+branch\s+.*-D\b' && deny "git branch -D is denied"
 has 'osascript.*delete' && deny "osascript delete is denied"
 
+# --- git and gh run outside the sandbox (excludedCommands), so block what turns them into code execution ---
+has 'git\s+(push|fetch|pull|ls-remote)\b.*--(upload-pack|receive-pack|exec)' && deny "git --upload-pack/--receive-pack/--exec is denied"
+has 'git\s+(-c|--config-env)\s' && deny "git -c config override is denied"
+has 'gh\s+(extension|alias)\b' && deny "gh extensions and aliases are denied"
+has 'gh\s+auth\s+token|--show-token' && deny "printing the GitHub token is denied"
+has 'gh\s+repo\s+delete' && deny "gh repo delete is denied"
+has 'gh\s+api\b.*(-X|--method)[[:space:]=]*(DELETE|delete)' && deny "gh api DELETE is denied"
+
 # --- delete APIs inside interpreters (python, node, ruby) ---
 has 'os\.(remove|removedirs)|shutil\.rmtree|\.unlink\(|(rmSync|rmdirSync|unlinkSync)|fs\.(promises\.)?(rm|rmdir|unlink)\(|FileUtils\.rm|File\.delete' \
   && deny "file-deletion API call is denied"
