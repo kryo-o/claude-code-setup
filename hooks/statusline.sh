@@ -1,5 +1,7 @@
 #!/bin/bash
 # Claude Code status line: model, context bar, cost, 5h/7d limits, git branch, plugin badges.
+# C locale: in locales with a decimal comma (de_DE, pl_PL...), printf rejects "42.5".
+export LC_ALL=C
 in=$(cat)
 j() { echo "$in" | jq -r "$1 // empty"; }
 

@@ -6,6 +6,22 @@ All notable changes to this template are listed here. The format follows [Keep a
 
 ### Added
 - Demo GIF in the README and a `demo/` folder with the script that records it (`vhs demo/demo.tape`).
+- Linux support, including WSL2. The installer checks for `bubblewrap` and `socat`, which the Linux sandbox needs.
+- Permission rules and deny-guard patterns for Linux credential paths: Chrome, Chromium and Brave profiles in `~/.config`, Firefox in `~/.mozilla`, GNOME keyrings and `pass`. Five new guard test cases (49 total).
+
+- Disclaimer in the README, and a note at the end of the installer, about unfrozen third-party plugins updating from their authors.
+
+### Changed
+- Manual install steps no longer use the macOS-only `sed -i ''`.
+- `statusline.sh` moved to `hooks/statusline.sh`. The status line runs outside the sandbox, so it now lives in a folder the sandbox always protects from writes.
+- The installer shows which version of each third-party mod it downloaded and warns if it isn't the reviewed one.
+
+### Fixed
+- Security: `deny-guard.sh` could miss a dangerous command in a large input (over about 64 KB, for example a long script run with `bash x.sh`). With `pipefail` on, `grep -q` stopping at the first match made the pipe fail, which counted as no match. Added a regression test.
+- `deny-guard.sh` no longer expands `*` in commands against files on disk while looking for scripts.
+- The status line showed `0%` and `$0.00` in locales that use a decimal comma, such as German or Polish.
+- The installer's plugin loops could lose items when `claude` read from standard input, and broke on a home folder with a space in its path.
+- The installer no longer uses `sed` to fill in the home path, which broke on paths containing `&` or `#`.
 
 ## [1.0.0] - 2026-10-19
 

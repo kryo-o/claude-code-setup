@@ -24,6 +24,7 @@ deny() {
 # script and then executing it doesn't hide its contents.
 # ponytail: one level deep only; a script that calls another script slips past.
 SCAN="$COMMAND"
+set -f  # split the command into words without expanding globs like * against the disk
 for tok in $COMMAND; do
   tok="${tok//[\'\"]/}"
   case "$tok" in
@@ -34,17 +35,20 @@ for tok in $COMMAND; do
       ;;
   esac
 done
+set +f
 
 # Strip quotes and backslashes so "rm", r''m and \rm all read as rm.
 TEXT=$(printf '%s' "$SCAN" | tr -d "'\"\\\\")
-has() { printf '%s' "$TEXT" | grep -qE "$1"; }
+# Here-string, not a pipe: with pipefail, grep -q exiting early on a match makes
+# the writer of a large input fail with SIGPIPE, which would turn a match into a miss.
+has() { grep -qE "$1" <<< "$TEXT"; }
 
 # A word not glued to letters, digits, _ . - (so /bin/rm and $(echo rm) match, rm.txt doesn't)
 W='(^|[^[:alnum:]_.-])'
 E='([^[:alnum:]_.-]|$)'
 
 # --- obfuscated execution ---
-printf '%s' "$SCAN" | grep -qE "\\\$'[^']*\\\\(x|[0-7]{3})" && deny "ANSI-C escaped command text is denied"
+grep -qE "\\\$'[^']*\\\\(x|[0-7]{3})" <<< "$SCAN" && deny "ANSI-C escaped command text is denied"
 has "${W}eval${E}" && deny "eval is denied"
 has 'base64[[:space:]]+(-d|-D|--decode)' && deny "base64 decode is denied"
 
@@ -80,11 +84,12 @@ has '\.zsh_history|\.bash_history' && deny "shell history file is denied"
 has 'CloudDocs|Mobile Documents|com~apple~CloudDocs' && deny "iCloud CloudDocs path is denied"
 
 # --- browser cookie / login-data files ---
-has '(Google/Chrome|BraveSoftware).*(Cookies|Login Data)|Cookies\b.*Chrome|Login Data\b' && deny "browser cookie/login-data file is denied"
+has '(Google/Chrome|google-chrome|chromium|BraveSoftware).*(Cookies|Login Data)|Cookies\b.*Chrome|Login Data\b' && deny "browser cookie/login-data file is denied"
 has 'cookies\.sqlite|logins\.json' && deny "Firefox cookie/login-data file is denied"
 
-# --- macOS Keychains ---
+# --- password stores: macOS Keychains, GNOME keyrings, pass ---
 has 'Library/Keychains' && deny "macOS Keychain path is denied"
+has 'share/keyrings|\.password-store' && deny "password store path is denied"
 
 # --- .env files ---
 has '(^|[^a-zA-Z0-9_.])\.env(\.[a-zA-Z0-9_.-]+)?\b' && deny ".env file access is denied"

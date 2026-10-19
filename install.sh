@@ -12,9 +12,15 @@ say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 ask() { read -r -p "$1 [y/N] " a; [[ "$a" =~ ^[Yy]$ ]]; }
 
 # --- checks ---
-[ "$(uname)" = "Darwin" ] || { echo "This template is macOS only for now."; exit 1; }
-for cmd in claude git jq rsync; do
-  command -v "$cmd" >/dev/null || { echo "Missing: $cmd (jq: brew install jq)"; exit 1; }
+need="claude git jq rsync"
+case "$(uname)" in
+  Darwin) hint="brew install jq" ;;
+  # The Linux sandbox runs commands through bubblewrap and proxies network via socat.
+  Linux) need+=" bwrap socat"; hint="your package manager, e.g. apt install jq rsync bubblewrap socat" ;;
+  *) echo "Supported on macOS and Linux (including WSL2) only."; exit 1 ;;
+esac
+for cmd in $need; do
+  command -v "$cmd" >/dev/null || { echo "Missing: $cmd. Install with: $hint"; exit 1; }
 done
 
 # --- backup ---
@@ -43,14 +49,21 @@ else
     claude plugin install reflect-mod@claude-reflect-marketplace
     claude plugin marketplace add karanb192/claude-code-mods
     claude plugin install cache-tax@claude-code-mods
+    # Newest cached version of each; older cached versions are ignored.
+    rdir=$(ls -d "$C"/claude-reflect-marketplace/reflect-mod/*/ 2>/dev/null | sort -V | tail -1)
+    cdir=$(ls -d "$C"/claude-code-mods/cache-tax/*/ 2>/dev/null | sort -V | tail -1)
+    [ -n "$rdir" ] && [ -n "$cdir" ] || { echo "Could not find the downloaded mods in $C."; exit 1; }
+    rver=$(basename "$rdir"); cver=$(basename "$cdir")
     echo
-    echo "Review the code before freezing it:"
-    ls -d "$C"/claude-reflect-marketplace/reflect-mod/*/hooks "$C"/claude-code-mods/cache-tax/*/hooks || true
-    echo "Reviewed versions: reflect-mod 3.3.0, cache-tax 2.2.1. Anything newer is unreviewed."
+    echo "Downloaded reflect-mod $rver and cache-tax $cver. Review the code before freezing it:"
+    echo "  ${rdir}hooks/"
+    echo "  ${cdir}hooks/"
+    [ "$rver" = "3.3.0" ] || echo "  WARNING: reflect-mod $rver is not the reviewed version (3.3.0). Read it closely."
+    [ "$cver" = "2.2.1" ] || echo "  WARNING: cache-tax $cver is not the reviewed version (2.2.1). Read it closely."
     if ask "Freeze these copies?"; then
       mkdir -p "$V"
-      rsync -a --exclude .in_use "$C"/claude-reflect-marketplace/reflect-mod/*/ "$V/reflect-mod/"
-      rsync -a --exclude .in_use --exclude site --exclude docs --exclude .github "$C"/claude-code-mods/cache-tax/*/ "$V/cache-tax/"
+      rsync -a --exclude .in_use "$rdir" "$V/reflect-mod/"
+      rsync -a --exclude .in_use --exclude site --exclude docs --exclude .github "$cdir" "$V/cache-tax/"
     else
       use_vendored=no
     fi
@@ -67,10 +80,11 @@ fi
 say "Copying config into $CL"
 mkdir -p "$V"
 cp -R "$REPO/mods/vendored-mods/.claude-plugin" "$V/"
-cp "$REPO/statusline.sh" "$CL/"
 cp "$REPO"/hooks/* "$CL/hooks/"
 chmod +x "$CL/hooks/deny-guard.sh"
-sed "s#__HOME__#$HOME#g" "$REPO/settings.json" > "$CL/settings.json"
+# jq, not sed: a home path containing & or # would break a sed replacement.
+jq --arg h "$HOME" 'walk(if type == "string" then gsub("__HOME__"; $h) else . end)' \
+  "$REPO/settings.json" > "$CL/settings.json"
 if [ "$use_vendored" = no ]; then
   jq 'del(.enabledPlugins["reflect-mod@vendored-mods", "cache-tax@vendored-mods"]) | del(.extraKnownMarketplaces["vendored-mods"])' \
     "$CL/settings.json" > "$CL/settings.json.tmp" && mv "$CL/settings.json.tmp" "$CL/settings.json"
@@ -87,14 +101,15 @@ fi
 say "Installing marketplaces and plugins"
 S="$CL/settings.json"
 claude plugin marketplace add anthropics/claude-plugins-official || true
-for m in $(jq -r '.extraKnownMarketplaces[].source | .repo // .path' "$S"); do
-  claude plugin marketplace add "$m" || true
-done
+# while-read, not for-in: a home folder with a space in its name must stay one path.
+while IFS= read -r m; do
+  claude plugin marketplace add "$m" </dev/null || true
+done < <(jq -r '.extraKnownMarketplaces[].source | .repo // .path' "$S")
 failed=""
-for p in $(jq -r '.enabledPlugins | keys[] | select(endswith("@builtin") | not)' "$S"); do
-  claude plugin uninstall "$p" >/dev/null 2>&1 || true
-  claude plugin install "$p" || failed+=" $p"
-done
+while IFS= read -r p; do
+  claude plugin uninstall "$p" </dev/null >/dev/null 2>&1 || true
+  claude plugin install "$p" </dev/null || failed+=" $p"
+done < <(jq -r '.enabledPlugins | keys[] | select(endswith("@builtin") | not)' "$S")
 
 # --- self-test ---
 say "Testing deny-guard"
@@ -106,3 +121,5 @@ if [ -n "$failed" ]; then
   exit 1
 fi
 say "Done. Start claude and run /plugin to check everything is there."
+echo "Note: plugins other than the frozen mods update from their authors' repos."
+echo "Turn off auto-update in /plugin > Marketplaces if you want to review each version first."

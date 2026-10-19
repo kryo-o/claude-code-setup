@@ -24,6 +24,16 @@
       "Read(~/Library/Application Support/Firefox/**/cookies.sqlite)",
       "Read(~/Library/Application Support/Firefox/**/logins.json)",
       "Read(~/Library/Keychains/**)",
+      "Read(~/.config/google-chrome/**/Cookies)",
+      "Read(~/.config/google-chrome/**/Login Data)",
+      "Read(~/.config/chromium/**/Cookies)",
+      "Read(~/.config/chromium/**/Login Data)",
+      "Read(~/.config/BraveSoftware/**/Cookies)",
+      "Read(~/.config/BraveSoftware/**/Login Data)",
+      "Read(~/.mozilla/firefox/**/cookies.sqlite)",
+      "Read(~/.mozilla/firefox/**/logins.json)",
+      "Read(~/.local/share/keyrings/**)",
+      "Read(~/.password-store/**)",
       "Read(~/.zsh_history)",
       "Read(~/.bash_history)",
       "Bash(*~/.zsh_history*)",
@@ -96,7 +106,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash \"$HOME/.claude/statusline.sh\""
+    "command": "bash \"$HOME/.claude/hooks/statusline.sh\""
   },
   "sandbox": {
     "enabled": true,

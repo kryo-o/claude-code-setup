@@ -1,10 +1,10 @@
 # Claude Code secure setup template
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey)
+![Version](https://img.shields.io/badge/version-1.0.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
 
 Claude Code's permission rules only match the start of a command. A deny rule for `rm *` doesn't stop `r''m -rf x`, `\rm -rf x` or `for f in x; do rm $f; done`. This template closes that gap and locks down the rest of your machine around Claude.
 
-It's a ready-to-use configuration for macOS. It runs every shell command in a sandbox, keeps Claude away from your credentials, shows what each session costs, makes Claude check current library docs instead of guessing, and installs a short list of reviewed plugins. Use it as is, or keep the security parts and swap the plugins for your own.
+It's a ready-to-use configuration for macOS and Linux (including WSL2). It runs every shell command in a sandbox, keeps Claude away from your credentials, shows what each session costs, makes Claude check current library docs instead of guessing, and installs a short list of reviewed plugins. Use it as is, or keep the security parts and swap the plugins for your own.
 
 ```bash
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
@@ -16,7 +16,7 @@ git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup &&
 
 | | Default | With this template |
 |---|---|---|
-| Shell commands | Ask once, then run with your full user access | Run in a macOS sandbox: writes only in the project and temp folders, filtered network |
+| Shell commands | Ask once, then run with your full user access | Run in a sandbox: writes only in the project and temp folders, filtered network |
 | SSH keys, cloud credentials, browser cookies, `.env` files | No specific rule | Blocked for both file reads and shell commands |
 | Disguised commands (`r''m`, loops, `eval`, base64) | Deny rules check the start of the command only | `deny-guard.sh` scans the whole command and any script it runs |
 | Package installs | Normal permission prompt | Always asks, even when sandboxed commands are auto-approved |
@@ -31,8 +31,8 @@ git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup &&
 | `install.sh` | One-command installer: backs up your settings, installs everything, runs the tests |
 | `settings.json` | Permissions, sandbox, hook, status line, plugins and marketplaces |
 | `hooks/deny-guard.sh` | Blocks dangerous Bash commands, including disguised ones |
-| `hooks/deny-guard-test.sh` and `hooks/deny-guard-cases.txt` | 44 test cases for the guard |
-| `statusline.sh` | One-line status: model, context bar, cost, 5h/7d limits, git branch, plugin badges |
+| `hooks/deny-guard-test.sh` and `hooks/deny-guard-cases.txt` | 49 test cases for the guard |
+| `hooks/statusline.sh` | One-line status: model, context bar, cost, 5h/7d limits, git branch, plugin badges |
 | `claude-md/docs-rule.md` | A `CLAUDE.md` rule that makes Claude check Context7 before using a library |
 | `mods/vendored-mods/.claude-plugin/marketplace.json` | A local marketplace for frozen copies of third-party mods |
 
@@ -42,7 +42,7 @@ git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup &&
 
 Each layer misses things the others catch.
 
-The sandbox is the actual boundary. With `sandbox.enabled: true` and `allowUnsandboxedCommands: false`, every Bash command runs inside macOS Seatbelt. Commands can only write to the project folder and temp folders, and network access goes through a filter. `autoAllowBashIfSandboxed` skips most permission prompts, which is safe because the sandbox limits what a command can damage.
+The sandbox is the actual boundary. With `sandbox.enabled: true` and `allowUnsandboxedCommands: false`, every Bash command runs inside the operating system's sandbox: Seatbelt on macOS, bubblewrap on Linux. Commands can only write to the project folder and temp folders, and network access goes through a filter. `autoAllowBashIfSandboxed` skips most permission prompts, which is safe because the sandbox limits what a command can damage.
 
 Permission rules come next. The `deny` list blocks reads of credentials: SSH keys, cloud credentials, browser cookies, the keychain, shell history, `.env` files and iCloud. It also blocks `rm`, `sudo`, force-pushes and `curl | bash`. The `ask` list makes Claude ask before installing packages, so dependencies don't get added without you noticing.
 
@@ -88,9 +88,9 @@ Optional, for specific kinds of work. Delete the ones you don't need from `setti
 Opus | ████░░░░░░ 42% | $1.50 | 5h:12% 7d:30% | ⎇ main | [CAVEMAN] | [PONYTAIL]
 ```
 
-It shows how full the context window is, what the session has cost and how much of your plan's usage limits you've used, so a runaway session is easy to spot. It finds the plugin badges by searching the plugin cache, so they survive plugin updates. It needs `jq`, which comes with macOS 15 and later.
+It shows how full the context window is, what the session has cost and how much of your plan's usage limits you've used, so a runaway session is easy to spot. It finds the plugin badges by searching the plugin cache, so they survive plugin updates. It needs `jq`, which comes with macOS 15 and later; on Linux, install it with your package manager.
 
-## Install (macOS)
+## Install
 
 ### Quick install
 
@@ -98,7 +98,7 @@ It shows how full the context window is, what the session has cost and how much 
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
 ```
 
-The installer needs `claude`, `git` and `jq`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods (and pauses so you can review their code), adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin and runs the guard tests. Running it again is safe.
+The installer needs `claude`, `git`, `jq` and `rsync`. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods (and pauses so you can review their code), adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin and runs the guard tests. Running it again is safe.
 
 ### Manual install
 
@@ -106,9 +106,10 @@ These are the same steps the installer runs.
 
 ### Step 0: prepare
 
-Clone this repo. Back up your current `~/.claude/settings.json` if you have one, because step 3 overwrites it. Make sure `jq` is installed, since the install loop and the status line both use it:
+Clone this repo. Back up your current `~/.claude/settings.json` if you have one, because step 3 overwrites it. Make sure `jq` is installed, since the install loop and the status line both use it. On Linux, the sandbox also needs `bubblewrap` and `socat`:
 ```bash
-which jq || brew install jq
+which jq || brew install jq                         # macOS
+sudo apt install jq rsync bubblewrap socat          # Debian/Ubuntu
 ```
 
 ### Step 1: get the Anthropic playground mods
@@ -146,9 +147,8 @@ claude plugin marketplace remove claude-code-mods
 Run these from inside this repo's folder:
 ```bash
 cp -R mods/vendored-mods/.claude-plugin ~/.claude/mods/vendored-mods/
-cp settings.json statusline.sh ~/.claude/
 mkdir -p ~/.claude/hooks && cp hooks/* ~/.claude/hooks/ && chmod +x ~/.claude/hooks/deny-guard.sh
-sed -i '' "s#__HOME__#$HOME#g" ~/.claude/settings.json
+sed "s#__HOME__#$HOME#g" settings.json > ~/.claude/settings.json
 cat claude-md/docs-rule.md >> ~/.claude/CLAUDE.md
 ```
 
@@ -178,15 +178,18 @@ In Claude Code, run `/plugin` and check that every plugin listed in `settings.js
 
 ## Moving to another machine
 
-Copy `settings.json`, `statusline.sh`, `CLAUDE.md`, `hooks/` and `mods/` from `~/.claude`. Leave out `plugins/cache` and `plugins/marketplaces`. On the new machine:
+Copy `settings.json`, `CLAUDE.md`, `hooks/` and `mods/` from `~/.claude`. Leave out `plugins/cache` and `plugins/marketplaces`. On the new machine:
 
 1. Unzip into your home folder.
-2. If your username is different, fix the paths: `sed -i '' "s#/Users/OLDNAME#$HOME#g" ~/.claude/settings.json`.
+2. If your username is different, fix the paths: `sed -i.bak "s#/Users/OLDNAME#$HOME#g" ~/.claude/settings.json` (on Linux the old path starts with `/home/`).
 3. Run the step 4 loop to install every plugin.
 
 ## Notes
 
-- Tested on macOS only. The permission paths (Keychains, `Library/Application Support`) and `sed -i ''` won't work as written on Linux.
+- Works on macOS and Linux, including WSL2 (WSL1 has no sandbox support). The permission rules cover both systems' credential paths: Keychains and `Library/Application Support` on macOS; `~/.config` browser profiles, `~/.mozilla`, GNOME keyrings and `pass` on Linux. Rules for paths that don't exist on your system do nothing.
+- On Ubuntu 24.04 and later, AppArmor stops bubblewrap from working until you add a profile for it. See [Set up Linux and WSL2](https://code.claude.com/docs/en/sandboxing) in the Claude Code docs; `/sandbox` in Claude Code shows whether anything is missing.
+- Linux support is newer and less tested than macOS. Please report problems with the bug report form.
+- The status line script and the hook live in `~/.claude/hooks/`, which the sandbox never lets shell commands write to. Both run outside the sandbox with your full access, so they must not be editable by a sandboxed command.
 - `cache-tax` pings and `security-guidance` reviews are model calls, so they count toward your plan's limits.
 - Keep the sandbox on. The hook and the permission rules can be worked around; the sandbox is what actually limits damage.
 
@@ -204,6 +207,14 @@ This template only wires things together. The plugins are other people's work, s
 - [claude-seo](https://github.com/AgriciDaniel/claude-seo) by AgriciDaniel
 - [scroll-craft](https://github.com/nateherkai/scroll-craft) by Nate Herk
 - [claude-code-playground](https://github.com/anthropics/claude-code-playground), [claude-for-legal](https://github.com/anthropics/claude-for-legal), and the official marketplace plugins `security-guidance` and `claude-security` by Anthropic
+
+## Disclaimer
+
+Only `reflect-mod` and `cache-tax` are frozen at a reviewed version. Every other plugin and skill this template installs comes straight from its author's repository and can update when the author pushes a new version. That includes the community plugins (caveman, ponytail, humanizer, claude-seo, nateherk-design) and third-party plugins listed in Anthropic's marketplace (mattpocock-skills, Context7). Whether an update installs automatically depends on each marketplace's auto-update setting.
+
+An update can change what a plugin does on your machine, and nobody behind this template reviews those updates. Keeping auto-update on is your decision and your risk. To check each version before it installs, open `/plugin` in Claude Code, go to Marketplaces, and turn off auto-update for the marketplaces you don't fully trust. Or freeze those plugins the same way this template freezes `reflect-mod` and `cache-tax`.
+
+This template is provided as is, without warranty of any kind (see the MIT [LICENSE](LICENSE)). You are responsible for what you install and run.
 
 ## License
 

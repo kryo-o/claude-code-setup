@@ -4,7 +4,7 @@
 
 If you find a way past the sandbox config, the permission rules or `deny-guard.sh` that this template should catch, report it privately through GitHub's [private vulnerability reporting](../../security/advisories/new) instead of opening a public issue.
 
-Include the command or input, what you expected to be blocked, and your Claude Code and macOS versions.
+Include the command or input, what you expected to be blocked, and your Claude Code version and operating system.
 
 ## What's in scope
 
