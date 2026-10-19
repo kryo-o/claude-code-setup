@@ -2,7 +2,7 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-10-19
 
 ### Added
 - `git push`, `pull` and `fetch` and the `gh` subcommands `repo`, `release`, `pr`, `issue` and `api` run outside the sandbox (`excludedCommands`), so Claude can use GitHub after you approve each command (`ask` rules).
@@ -42,5 +42,6 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.0]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.0
 [1.0.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.0.0
