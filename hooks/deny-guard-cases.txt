@@ -46,6 +46,25 @@ BLOCK|gh auth status --show-token
 BLOCK|gh repo delete someone/repo --yes
 BLOCK|gh api -X DELETE repos/someone/repo
 BLOCK|gh api --method=DELETE repos/someone/repo
+BLOCK|git --config-env=core.sshCommand=X push origin main
+BLOCK|GIT_SSH_COMMAND='touch x' git push origin main
+BLOCK|GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.fsmonitor git status
+BLOCK|git config core.hooksPath /tmp/h
+BLOCK|git config --global core.sshCommand evil
+BLOCK|git config protocol.ext.allow always
+BLOCK|git fetch --upl='touch x' origin
+BLOCK|git push --rece=evil origin main
+BLOCK|git push --ex=evil origin main
+BLOCK|gh auth status -t
+BLOCK|gh auth status -ht github.com
+BLOCK|gh auth login --with-token
+BLOCK|gh api -X Delete repos/someone/repo
+BLOCK|gh api -XDELETE repos/someone/repo
+BLOCK|gh api graphql -f query='mutation { deleteRepository(input:{}) { clientMutationId } }'
+ALLOW|gh auth status
+ALLOW|git ls-remote --exit-code origin
+ALLOW|gh api graphql -f query='query { viewer { login } }'
+ALLOW|git config user.name test
 ALLOW|git push -u origin main
 ALLOW|git fetch origin
 ALLOW|gh release create v1.0.0 --notes x

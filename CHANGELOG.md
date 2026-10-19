@@ -6,7 +6,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 
 ### Added
 - `git push`, `pull` and `fetch` and the `gh` subcommands `repo`, `release`, `pr`, `issue` and `api` run outside the sandbox (`excludedCommands`), so Claude can use GitHub after you approve each command (`ask` rules).
-- deny-guard and permission rules block the forms of those commands that could run arbitrary code or leak the token: `git --upload-pack`, `--receive-pack`, `--exec` and `-c`, `gh extension`, `gh alias`, `gh auth token`, `gh repo delete` and `gh api` DELETE calls. `Edit` is denied on `.git/hooks` and `.git/config`. 15 new guard test cases.
+- deny-guard and permission rules block the forms of those commands that could run arbitrary code or leak the token: `git --upload-pack`, `--receive-pack`, `--exec` and `-c`, `gh extension`, `gh alias`, `gh auth token`, `gh repo delete` and `gh api` DELETE calls. `Edit` is denied on `.git/hooks` and `.git/config`. deny-guard also blocks git environment overrides (`GIT_SSH_COMMAND`, `GIT_EXEC_PATH`, `GIT_CONFIG_*`) and `git config` keys that run commands (`core.sshCommand`, `core.hooksPath`, `core.fsmonitor`, `protocol.*.allow`, `insteadOf`). The git checks also catch abbreviated options (`--upl=`, `--rece=`, `--ex=`), the `gh auth` checks cover every subcommand that touches the token (including `gh auth status -t`), and `gh api` DELETE matching ignores case and also covers GraphQL mutations. 35 new guard test cases.
 - `Edit` deny rules for Claude Code's own config (settings, hooks, plugins, mods, skills, agents, commands, global `CLAUDE.md`, `~/.claude.json`), shell startup files, `~/.gitconfig`, `~/.ssh`, and login items (macOS LaunchAgents, Linux systemd user units and autostart).
 
 ## [1.0.1] - 2026-10-19
