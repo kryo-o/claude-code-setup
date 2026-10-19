@@ -109,7 +109,9 @@
       "Bash(go install *)",
       "Bash(uv tool *)",
       "Bash(launchctl load *)",
-      "Bash(launchctl bootstrap *)"
+      "Bash(launchctl bootstrap *)",
+      "Bash(gh *)",
+      "Bash(git push *)"
     ]
   },
   "hooks": {
@@ -132,7 +134,8 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
-    "allowUnsandboxedCommands": false
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": ["gh *", "git fetch *", "git pull *", "git push *"]
   },
   "enabledPlugins": {
     "security-guidance@claude-plugins-official": true,

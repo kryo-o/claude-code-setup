@@ -5,6 +5,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- `gh` and `git push`, `pull` and `fetch` run outside the sandbox (`excludedCommands`), so Claude can use GitHub after you approve each `gh` and `git push` command (`ask` rules).
 - `Edit` deny rules for Claude Code's own config (settings, hooks, plugins, mods, skills, agents, commands, global `CLAUDE.md`, `~/.claude.json`), shell startup files, `~/.gitconfig`, `~/.ssh`, and login items (macOS LaunchAgents, Linux systemd user units and autostart).
 
 ## [1.0.1] - 2026-10-19
