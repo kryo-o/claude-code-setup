@@ -10,6 +10,8 @@ It's a ready-to-use configuration for macOS. It runs every shell command in a sa
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
 ```
 
+![deny-guard blocking disguised rm, base64 and SSH key commands, then the status line](demo/demo.gif)
+
 ## Default Claude Code vs. this template
 
 | | Default | With this template |
