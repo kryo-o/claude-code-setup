@@ -88,3 +88,12 @@ ALLOW|find . -name '*.md'
 ALLOW|grep -rn "format" .
 ALLOW|python3 -c "print('hi')"
 ALLOW|cat environment.md
+BLOCK|echo x >> CLAUDE.md
+BLOCK|echo x > sub/CLAUDE.local.md
+BLOCK|printf x | tee -a CLAUDE.md
+BLOCK|sed -i '' 's/a/b/' CLAUDE.md
+BLOCK|cp /tmp/x CLAUDE.md
+BLOCK|echo x >> claude.md
+ALLOW|cat CLAUDE.md
+ALLOW|grep rule CLAUDE.md
+ALLOW|cp CLAUDE.md /tmp/backup

@@ -71,6 +71,9 @@
       "Edit(~/.config/autostart/**)",
       "Edit(//**/.git/hooks/**)",
       "Edit(//**/.git/config)",
+      "Edit(//**/.git/**/hooks/**)",
+      "Edit(//**/.git/**/config)",
+      "Edit(//**/.git/**/config.worktree)",
       "Bash(gh extension *)",
       "Bash(gh alias *)",
       "Bash(gh auth token*)",
@@ -139,7 +142,9 @@
       "Bash(git push *)",
       "Bash(git fetch *)",
       "Bash(git pull *)",
-      "Edit(~/.claude/projects/*/memory/**)"
+      "Edit(~/.claude/projects/*/memory/**)",
+      "Edit(//**/CLAUDE.md)",
+      "Edit(//**/CLAUDE.local.md)"
     ]
   },
   "hooks": {
@@ -163,6 +168,9 @@
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyWrite": ["~/**/CLAUDE.md", "~/**/CLAUDE.local.md"]
+    },
     "excludedCommands": ["gh repo *", "gh release *", "gh pr *", "gh issue *", "gh api *", "gh auth status", "git fetch *", "git pull *", "git push *"]
   },
   "enabledPlugins": {

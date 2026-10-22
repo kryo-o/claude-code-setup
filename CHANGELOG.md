@@ -2,6 +2,15 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.3] - 2026-10-22
+
+### Added
+- `ask` rules for project `CLAUDE.md` and `CLAUDE.local.md`. Every session loads them as instructions, and they can be committed, so a prompt injection saved there would last and spread to everyone who clones the repo.
+- `sandbox.filesystem.denyWrite` for `CLAUDE.md` and `CLAUDE.local.md` under your home folder, so shell commands and the scripts they run can't write them and edits go through the `ask` prompt. deny-guard also blocks shell writes to them (`>`, `tee`, `sed -i`, `cp`, `mv`, any letter case) as a second layer. 9 new guard test cases.
+
+### Fixed
+- `.git` deny rules missed submodule and worktree git folders (`.git/modules/<name>/hooks`, `config`, and `config.worktree`), which `git push` and `pull --recurse-submodules` use outside the sandbox.
+
 ## [1.1.2] - 2026-10-22
 
 ### Added
@@ -60,6 +69,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.3]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.3
 [1.1.2]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.2
 [1.1.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.0

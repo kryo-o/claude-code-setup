@@ -83,6 +83,10 @@ grep -qiE 'gh\s+api\b.*\bgraphql\b.*mutation' <<< "$TEXT" && deny "gh api graphq
 # A query read from a file (--input, -F query=@file) can't be checked for mutations, so deny it.
 has 'gh\s+api\b.*\bgraphql\b.*(--input|=@)' && deny "gh api graphql with a query from a file is denied"
 
+# --- CLAUDE.md is loaded as instructions every session; writes go through the Edit tool's ask rule instead ---
+# Case-insensitive: macOS file systems treat claude.md and CLAUDE.md as the same file.
+grep -qiE '>[[:space:]]*[^[:space:]]*claude(\.local)?\.md|tee\b.*claude(\.local)?\.md|sed\b.*-i.*claude(\.local)?\.md|(cp|mv)\b.*claude(\.local)?\.md[[:space:]]*($|[;&|])' <<< "$TEXT" && deny "shell writes to CLAUDE.md are denied; use the Edit tool"
+
 # --- delete APIs inside interpreters (python, node, ruby) ---
 has 'os\.(remove|removedirs)|shutil\.rmtree|\.unlink\(|(rmSync|rmdirSync|unlinkSync)|fs\.(promises\.)?(rm|rmdir|unlink)\(|FileUtils\.rm|File\.delete' \
   && deny "file-deletion API call is denied"
