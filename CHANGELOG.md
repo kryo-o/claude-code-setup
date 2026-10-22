@@ -2,6 +2,18 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-10-22
+
+### Added
+- README section on loosening the rules for one project with `.claude/settings.local.json`, and what project settings can't override.
+- `ask` rule for writes to Claude Code's memory (`~/.claude/projects/*/memory/**`), which every later session loads and which Claude otherwise saves without asking.
+
+### Fixed
+- Security: Claude could write a project's `.claude/settings.local.json` or `.claude/settings.json`, which override user settings and can turn off the sandbox, add allow rules or add hooks. Claude Code only asks before these writes, and in auto mode a classifier decides. `Edit` is now denied on both files in every folder, and on project `.claude/hooks`, `skills`, `agents`, `commands`, `rules` and `.mcp.json`.
+- `.git/hooks` and `.git/config` deny rules only matched under the current folder. They now use `//**/` and match anywhere.
+- `Edit` denied on `~/.config/git` and `~/.config/gh`, which git and `gh` read when they run outside the sandbox, plus `~/.claude/rules`, `~/.zlogin`, `~/.bash_login` and fish config.
+- `Read` denied on `~/.claude/.credentials.json` (Claude Code's login on Linux), `~/.git-credentials`, `~/.config/git/credentials`, `~/.pypirc` and `~/.cargo/credentials.toml`.
+
 ## [1.1.1] - 2026-10-19
 
 ### Fixed
@@ -48,6 +60,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.2]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.2
 [1.1.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.1
 [1.1.0]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.0
 [1.0.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.0.1
