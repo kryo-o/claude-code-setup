@@ -144,7 +144,9 @@
       "Bash(git pull *)",
       "Edit(~/.claude/projects/*/memory/**)",
       "Edit(//**/CLAUDE.md)",
-      "Edit(//**/CLAUDE.local.md)"
+      "Edit(//**/CLAUDE.local.md)",
+      "Edit(//**/[Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd])",
+      "Edit(//**/[Cc][Ll][Aa][Uu][Dd][Ee].[Ll][Oo][Cc][Aa][Ll].[Mm][Dd])"
     ]
   },
   "hooks": {
@@ -169,7 +171,7 @@
     "autoAllowBashIfSandboxed": true,
     "allowUnsandboxedCommands": false,
     "filesystem": {
-      "denyWrite": ["~/**/CLAUDE.md", "~/**/CLAUDE.local.md"]
+      "denyWrite": ["//**/CLAUDE.md", "//**/CLAUDE.local.md"]
     },
     "excludedCommands": ["gh repo *", "gh release *", "gh pr *", "gh issue *", "gh api *", "gh auth status", "git fetch *", "git pull *", "git push *"]
   },

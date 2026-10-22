@@ -2,6 +2,12 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.4] - 2026-10-22
+
+### Fixed
+- The `CLAUDE.md` and `CLAUDE.local.md` `ask` rules only matched that exact case. On macOS, a write to `claude.md` changes the same file, so the rules now match any case.
+- `sandbox.filesystem.denyWrite` for `CLAUDE.md` and `CLAUDE.local.md` only covered your home folder. It now uses `//**/` and covers projects anywhere, such as `/Volumes` or `/opt`.
+
 ## [1.1.3] - 2026-10-22
 
 ### Added
@@ -69,6 +75,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.4]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.4
 [1.1.3]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.3
 [1.1.2]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.2
 [1.1.1]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.1
