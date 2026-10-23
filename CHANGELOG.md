@@ -2,6 +2,11 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.6] - 2026-10-22
+
+### Added
+- README: a "What it protects against" table of the attacks the template stops and how, and a note at the top that the setup puts security before convenience. Loosen one project in its `.claude/settings.local.json`, and leave the global settings as they are.
+
 ## [1.1.5] - 2026-10-22
 
 ### Changed
@@ -80,6 +85,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.6]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.6
 [1.1.5]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.5
 [1.1.4]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.4
 [1.1.3]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.3

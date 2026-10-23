@@ -1,6 +1,6 @@
 # Claude Code secure setup template
 
-![Version](https://img.shields.io/badge/version-1.1.5-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.1.6-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
 
 Claude Code's permission rules only match the start of a command. A deny rule for `rm *` doesn't stop `r''m -rf x`, `\rm -rf x` or `for f in x; do rm $f; done`. This template closes that gap and locks down the rest of your machine around Claude.
 
@@ -11,6 +11,24 @@ git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup &&
 ```
 
 ![deny-guard blocking disguised rm, base64 and SSH key commands, then the status line](demo/demo.gif)
+
+> [!IMPORTANT]
+> This setup puts security first, not convenience. Claude will run into blocked commands and extra prompts: `rm`, `sudo`, `eval`, pipes into a shell, edits to its own config and to `CLAUDE.md`, and every `git push`. That's on purpose. Keep `~/.claude/settings.json` as it is, so every project starts locked down. When one project needs more room, loosen it in that project's `.claude/settings.local.json` ([how](#loosening-the-rules-for-one-project)). Commands the template blocks stay blocked in every project, so run those yourself with `!` in front.
+
+## What it protects against
+
+Claude reads untrusted text all day: READMEs, issues, web pages, package code and tool output. Any of it can carry instructions that Claude follows (prompt injection), and Claude can also get a command wrong on its own. The template assumes both will happen and limits the damage.
+
+| Attack | Example | What stops it |
+|---|---|---|
+| Disguised destructive command | `r''m -rf ~`, a loop around `rm`, `base64 -d \| sh` | deny-guard scans the whole command and any script it runs. The sandbox only lets commands write in the project and temp folders |
+| Credential theft | Reading `~/.ssh/id_ed25519`, `~/.aws/credentials`, browser cookies or `.env`, then sending them out | `Read` deny rules, which the sandbox also enforces for shell commands |
+| Turning off the guardrails | Writing a project's `.claude/settings.local.json` to disable the sandbox or add a hook | `Edit` deny on Claude Code's config, in `~/.claude` and in every project |
+| Code that runs later, outside the sandbox | A line in `~/.zshrc`, a LaunchAgent, a git hook, `core.sshCommand` in git config, a changed `.mcp.json` server | `Edit` deny on shell startup files, login items, git and `gh` config, and `.mcp.json` |
+| Prompt injection that lasts | A note in memory or a rule in `CLAUDE.md` that every later session follows | `ask` rules, so you see each write. The sandbox blocks shell writes to `CLAUDE.md` |
+| GitHub token leak or repo damage | `gh auth token`, `git push --upload-pack=...`, `gh repo delete`, `gh api -X DELETE` | deny-guard and deny rules. Every `gh` command and `git push` asks first |
+| Supply chain | Installing a typo-squatted npm package, a plugin update that swaps in new code | `ask` rules on package installs. Third-party mods are frozen at reviewed commits |
+| Accidents | `git push --force`, `git reset --hard`, `git clean -fd` | deny rules and deny-guard |
 
 ## Default Claude Code vs. this template
 
@@ -209,7 +227,7 @@ In Claude Code, run `/plugin` and check that every plugin listed in `settings.js
 
 ## Loosening the rules for one project
 
-The rules in `~/.claude/settings.json` are strict on purpose, and Claude can't change them. If they get in the way in one project, you can relax them there yourself with `.claude/settings.local.json` in that project. Claude Code keeps this file out of git, it only applies to that project, and it takes precedence over your user settings. For example, to let Claude fetch your team's docs and give it access to a sibling folder:
+The rules in `~/.claude/settings.json` are strict on purpose. Leave them as they are: they're the safe default every project starts from, and Claude can't change them. When one project needs more room, loosen it in that project's `.claude/settings.local.json`. Claude Code keeps this file out of git, it only applies to that project, and it takes precedence over your user settings. For example, to let Claude fetch your team's docs and use a sibling folder:
 
 ```json
 {
@@ -223,7 +241,7 @@ The rules in `~/.claude/settings.json` are strict on purpose, and Claude can't c
 Use `.claude/settings.json` instead for rules the whole team should share through git.
 
 What a project file can't do:
-- Remove a `deny` rule or skip an `ask` rule from your user settings. A deny rule wins wherever it's defined, and an ask rule still prompts even when a project `allow` rule matches.
+- Remove a `deny` rule or skip an `ask` rule from your user settings. A deny rule wins wherever it's defined, and an ask rule still prompts even when a project `allow` rule matches. When you need a blocked command, run it yourself with `!` in front, for example `! rm -rf build`.
 - Be written by Claude. This template denies `Edit` on every project's `.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks`, `skills`, `agents`, `commands`, `rules` and `.mcp.json`. Write these files yourself, or add rules with `/permissions`, which Claude Code saves without going through Claude's tools.
 
 A project file can still turn the sandbox off or add hooks, so keep these files short and read them before you commit. When you open a cloned repo, Claude Code asks you to trust the folder before it uses that repo's `.claude/settings.json`. Read the file before you say yes.
