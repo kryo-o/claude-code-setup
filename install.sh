@@ -6,7 +6,6 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 CL="$HOME/.claude"
 V="$CL/mods/vendored-mods"
-C="$CL/plugins/cache"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 ask() { read -r -p "$1 [y/N] " a; [[ "$a" =~ ^[Yy]$ ]]; }
@@ -24,7 +23,7 @@ for cmd in $need; do
 done
 
 # --- backup ---
-mkdir -p "$CL/hooks" "$CL/mods"
+mkdir -p "$CL/hooks" "$V"
 if [ -f "$CL/settings.json" ]; then
   b="$CL/settings.json.bak-$(date +%Y%m%d-%H%M%S)"
   cp "$CL/settings.json" "$b"
@@ -37,43 +36,17 @@ if [ ! -d "$CL/mods/claude-code-playground" ]; then
   git clone --depth 1 https://github.com/anthropics/claude-code-playground "$CL/mods/claude-code-playground"
 fi
 
-# --- third-party mods: install, review, freeze ---
+# --- third-party mods: reviewed copies shipped in this repo ---
 use_vendored=yes
-if [ -d "$V/reflect-mod" ] && [ -d "$V/cache-tax" ]; then
-  say "Frozen copies of reflect-mod and cache-tax already exist, keeping them"
+say "Third-party mods (reflect-mod, cache-tax)"
+echo "Reviewed copies ship in this repo, so nothing is downloaded from their authors."
+if ask "Install them?"; then
+  # --delete makes the installed copy match the repo exactly; .in_use is Claude Code's and stays.
+  for m in reflect-mod cache-tax; do
+    rsync -a --delete --exclude .in_use "$REPO/mods/vendored-mods/$m/" "$V/$m/"
+  done
 else
-  say "Third-party mods (reflect-mod, cache-tax)"
-  echo "These are installed from their authors' repos, then frozen so updates can't change them."
-  if ask "Install them?"; then
-    claude plugin marketplace add bayramannakov/claude-reflect
-    claude plugin install reflect-mod@claude-reflect-marketplace
-    claude plugin marketplace add karanb192/claude-code-mods
-    claude plugin install cache-tax@claude-code-mods
-    # Newest cached version of each; older cached versions are ignored.
-    rdir=$(ls -d "$C"/claude-reflect-marketplace/reflect-mod/*/ 2>/dev/null | sort -V | tail -1)
-    cdir=$(ls -d "$C"/claude-code-mods/cache-tax/*/ 2>/dev/null | sort -V | tail -1)
-    [ -n "$rdir" ] && [ -n "$cdir" ] || { echo "Could not find the downloaded mods in $C."; exit 1; }
-    rver=$(basename "$rdir"); cver=$(basename "$cdir")
-    echo
-    echo "Downloaded reflect-mod $rver and cache-tax $cver. Review the code before freezing it:"
-    echo "  ${rdir}hooks/"
-    echo "  ${cdir}hooks/"
-    [ "$rver" = "3.3.0" ] || echo "  WARNING: reflect-mod $rver is not the reviewed version (3.3.0). Read it closely."
-    [ "$cver" = "2.2.1" ] || echo "  WARNING: cache-tax $cver is not the reviewed version (2.2.1). Read it closely."
-    if ask "Freeze these copies?"; then
-      mkdir -p "$V"
-      rsync -a --exclude .in_use "$rdir" "$V/reflect-mod/"
-      rsync -a --exclude .in_use --exclude site --exclude docs --exclude .github "$cdir" "$V/cache-tax/"
-    else
-      use_vendored=no
-    fi
-    claude plugin uninstall reflect-mod@claude-reflect-marketplace || true
-    claude plugin uninstall cache-tax@claude-code-mods || true
-    claude plugin marketplace remove claude-reflect-marketplace || true
-    claude plugin marketplace remove claude-code-mods || true
-  else
-    use_vendored=no
-  fi
+  use_vendored=no
 fi
 
 # --- config files ---

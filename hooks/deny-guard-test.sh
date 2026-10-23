@@ -13,7 +13,8 @@ done < "$dir/deny-guard-cases.txt"
 # A dangerous command followed by 300 KB of padding must still be blocked
 # (regression test: a piped grep -q used to miss matches in large inputs).
 big="$(printf 'r%s -rf x\n' m)$(head -c 300000 /dev/zero | tr '\0' a)"
-out=$(jq -n --arg c "$big" '{tool_input:{command:$c}}' | bash "$dir/deny-guard.sh")
+# Piped via stdin: Linux caps one argv string at 128 KB, so --arg fails here.
+out=$(printf '%s' "$big" | jq -Rs '{tool_input:{command:.}}' | bash "$dir/deny-guard.sh")
 [ -n "$out" ] || { echo "FAIL want=BLOCK got=ALLOW: large input"; fail=1; }
 
 [ "$fail" = 0 ] && echo "all cases pass"

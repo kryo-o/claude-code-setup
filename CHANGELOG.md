@@ -2,6 +2,16 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.7] - 2026-10-23
+
+### Changed
+- The reviewed code of `reflect-mod` 3.3.0 and `cache-tax` 2.2.1 now ships in `mods/vendored-mods/`, and the installer copies it from there. Before, it downloaded the latest upstream release and only warned if the version number differed, so new or swapped code could get frozen after a single "y". Both copies match the reviewed commits byte for byte, and both are MIT licensed.
+- Re-running the installer now replaces `~/.claude/mods/vendored-mods/reflect-mod` and `cache-tax` with the repo's copies, so a reviewed upgrade reaches you. Before, existing copies were kept.
+
+### Fixed
+- `install.sh` failed on Linux at the deny-guard self-test with `jq: Argument list too long`. The 300 KB test input went to jq as one argument, and Linux caps a single argument at 128 KB. It now goes through stdin.
+- README: cache-tax's source repo is `karanb192/cache-tax`, not `karanb192/claude-code-mods`.
+
 ## [1.1.6] - 2026-10-22
 
 ### Added
@@ -85,6 +95,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.7]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.7
 [1.1.6]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.6
 [1.1.5]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.5
 [1.1.4]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.4
