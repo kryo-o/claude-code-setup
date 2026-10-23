@@ -103,7 +103,8 @@ failed=""
 while IFS= read -r p; do
   claude plugin uninstall "$p" </dev/null >/dev/null 2>&1 || true
   claude plugin install "$p" </dev/null || failed+=" $p"
-done < <(jq -r '.enabledPlugins | keys[] | select(endswith("@builtin") | not)' "$S")
+# Only plugins that are on: installing one turns it on, and a plugin you turned off stays off.
+done < <(jq -r '.enabledPlugins | to_entries[] | select(.value == true) | .key | select(endswith("@builtin") | not)' "$S")
 
 # --- Claude OS dashboard and its claude-os command ---
 # Both run outside the sandbox when you start them, so settings.json denies Claude edits to them.
