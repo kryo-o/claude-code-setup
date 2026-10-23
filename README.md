@@ -1,6 +1,6 @@
 # Claude Code secure setup template
 
-![Version](https://img.shields.io/badge/version-1.1.6-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.1.7-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
 
 Claude Code's permission rules only match the start of a command. A deny rule for `rm *` doesn't stop `r''m -rf x`, `\rm -rf x` or `for f in x; do rm $f; done`. This template closes that gap and locks down the rest of your machine around Claude.
 
@@ -53,6 +53,7 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 | `hooks/statusline.sh` | One-line status: model, context bar, cost, 5h/7d limits, git branch, plugin badges |
 | `claude-md/docs-rule.md` | A `CLAUDE.md` rule that makes Claude check Context7 before using a library |
 | `mods/vendored-mods/.claude-plugin/marketplace.json` | A local marketplace for frozen copies of third-party mods |
+| `mods/vendored-mods/reflect-mod/` and `mods/vendored-mods/cache-tax/` | The reviewed code of the two third-party mods, with their MIT licenses |
 
 ## How it works
 
@@ -101,14 +102,14 @@ One quirk: the hook decides which scripts to read by file extension. If a harmle
 
 ### Third-party mods are frozen after review
 
-Plugins and mods run code on your machine, and an update can replace that code with anything. The official Anthropic plugins update normally. The two third-party mods get more access than unreviewed code should have: `reflect-mod` writes to `CLAUDE.md`, and `cache-tax` sends model requests in the background. So the template installs them from a local `directory` marketplace, pinned to reviewed commits. They only change when you copy in a new version yourself.
+Plugins and mods run code on your machine, and an update can replace that code with anything. The official Anthropic plugins update normally. The two third-party mods get more access than unreviewed code should have: `reflect-mod` writes to `CLAUDE.md`, and `cache-tax` sends model requests in the background. So this repo ships reviewed copies of their code in `mods/vendored-mods/`, and the template installs them from a local `directory` marketplace. Nothing is downloaded from their authors, so an upstream change, or a different release published under the same version number, can't reach you. Each copy is exactly the upstream code at the reviewed commit, and both are MIT licensed.
 
 | Mod | Source | Reviewed commit |
 |---|---|---|
-| reflect-mod 3.3.0 | `bayramannakov/claude-reflect` | `b6c42326903af3dd2bf3772b979730a44d8548ca` |
-| cache-tax 2.2.1 | `karanb192/claude-code-mods` | `06cac47ec125a41a4aeeb78a6b006bec8cc6d6ed` |
+| reflect-mod 3.3.0 | `bayramannakov/claude-reflect` (folder `mod/`) | `b6c42326903af3dd2bf3772b979730a44d8548ca` |
+| cache-tax 2.2.1 | `karanb192/cache-tax` | `06cac47ec125a41a4aeeb78a6b006bec8cc6d6ed` |
 
-This repo doesn't include their code. The install steps below have you download and review it yourself.
+To move to a newer version, download the new commit, read the diff against the folder in `mods/vendored-mods/`, replace the folder and update this table. The diff shows up in the commit, so anyone can check what changed.
 
 ### Plugins
 
@@ -147,7 +148,7 @@ It shows how full the context window is, what the session has cost and how much 
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
 ```
 
-The installer needs `claude`, `git`, `jq` and `rsync`. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods (and pauses so you can review their code), adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin and runs the guard tests. Running it again is safe.
+The installer needs `claude`, `git`, `jq` and `rsync`. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods from their reviewed copies in this repo, adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin and runs the guard tests. Running it again is safe.
 
 ### Manual install
 
@@ -168,27 +169,13 @@ mkdir -p ~/.claude/mods
 git clone https://github.com/anthropics/claude-code-playground ~/.claude/mods/claude-code-playground
 ```
 
-### Step 2: freeze the third-party mods
+### Step 2: copy in the third-party mods
 
-Install each mod from upstream, review it, copy it into your local marketplace, then remove the upstream version:
+Run this from inside this repo's folder. It installs the reviewed copies that ship in this repo:
 ```bash
-claude plugin marketplace add bayramannakov/claude-reflect
-claude plugin install reflect-mod@claude-reflect-marketplace
-claude plugin marketplace add karanb192/claude-code-mods
-claude plugin install cache-tax@claude-code-mods
-```
-Read the code in `~/.claude/plugins/cache/claude-reflect-marketplace/reflect-mod/<version>/hooks/` and `~/.claude/plugins/cache/claude-code-mods/cache-tax/<version>/hooks/`. If the versions are newer than the ones in the table above, the code hasn't been reviewed yet, so read it closely.
-
-Then copy them and remove the upstream installs:
-```bash
-V=~/.claude/mods/vendored-mods; C=~/.claude/plugins/cache
+V=~/.claude/mods/vendored-mods
 mkdir -p $V
-rsync -a --exclude .in_use $C/claude-reflect-marketplace/reflect-mod/*/ $V/reflect-mod/
-rsync -a --exclude .in_use --exclude site --exclude docs --exclude .github $C/claude-code-mods/cache-tax/*/ $V/cache-tax/
-claude plugin uninstall reflect-mod@claude-reflect-marketplace
-claude plugin uninstall cache-tax@claude-code-mods
-claude plugin marketplace remove claude-reflect-marketplace
-claude plugin marketplace remove claude-code-mods
+for m in reflect-mod cache-tax; do rsync -a --delete --exclude .in_use mods/vendored-mods/$m/ $V/$m/; done
 ```
 
 ### Step 3: copy this config in
