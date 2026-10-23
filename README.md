@@ -6,7 +6,7 @@ Claude Code's permission rules only match the start of a command. A deny rule fo
 
 It's a ready-to-use configuration for macOS and Linux (including WSL2). It runs every shell command in a sandbox, keeps Claude away from your credentials, shows what each session costs, makes Claude check current library docs instead of guessing, and installs a short list of reviewed plugins. Use it as is, or keep the security parts and swap the plugins for your own.
 
-It also ships **Claude OS**, a local dashboard for your whole Claude setup: every plugin, skill, agent, hook, MCP server, permission rule and memory file, what each session cost, and which skills could run on a cheaper model. Type `claude-os` in any project folder to open it. It's read-only: every change it suggests is a command you run yourself, so it can't be used to get around the guardrails.
+It also ships Claude OS, a local dashboard for your whole Claude setup: every plugin, skill, agent, hook, MCP server, permission rule and memory file, what each session cost, and which skills could run on a cheaper model. Type `claude-os` in any project folder to open it. It's read-only: every change it suggests is a command you run yourself, so it can't be used to get around the guardrails.
 
 ```bash
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
@@ -52,6 +52,7 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 |---|---|
 | `install.sh` | One-command installer: installs Claude Code if it's missing, backs up your settings, installs everything, runs the tests |
 | `install-claude.sh` and `install-claude-test.sh` | The Claude Code install step and its 6 tests |
+| `merge-settings.jq` and `install-test.sh` | The settings merge, its tests, and a full installer run against a fake home |
 | `settings.json` | Permissions, sandbox, hook, status line, plugins and marketplaces |
 | `hooks/deny-guard.sh` | Blocks dangerous Bash commands, including disguised ones |
 | `hooks/deny-guard-test.sh` and `hooks/deny-guard-cases.txt` | 99 test cases for the guard |
@@ -59,7 +60,7 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 | `claude-md/docs-rule.md` | A `CLAUDE.md` rule that makes Claude check Context7 before using a library |
 | `mods/vendored-mods/.claude-plugin/marketplace.json` | A local marketplace for frozen copies of third-party mods |
 | `mods/vendored-mods/reflect-mod/` and `mods/vendored-mods/cache-tax/` | The reviewed code of the two third-party mods, with their MIT licenses |
-| `dashboard/` | Claude OS, a read-only local dashboard of everything installed and what it costs, with 63 tests |
+| `dashboard/` | Claude OS, a read-only local dashboard of everything installed and what it costs, with 66 tests |
 | `demo/dashboard-gif.sh` | Turns a screen recording of the dashboard into `demo/claude-os.gif` |
 
 ## How it works
@@ -176,7 +177,11 @@ Run its tests with `python3 -I -m unittest discover -s dashboard/tests -t dashbo
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
 ```
 
-The installer needs `git`, `jq` and `rsync`. If Claude Code isn't installed, it offers to install it with Anthropic's installer from `https://claude.ai/install.sh`. It downloads the script in full over HTTPS before running it, so a cut-off download can't run half a script. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods from their reviewed copies in this repo, adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin, installs Claude OS and its `claude-os` command, and runs the guard tests. Running it again is safe.
+The installer needs `git`, `jq` and `rsync`. If Claude Code isn't installed, it offers to install it with Anthropic's installer from `https://claude.ai/install.sh`. It downloads the script in full over HTTPS before running it, so a cut-off download can't run half a script. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods from their reviewed copies in this repo, adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin, installs Claude OS and its `claude-os` command, and runs the guard tests.
+
+Running it again is safe, because it merges the template into your `settings.json` instead of replacing it. Your own settings stay: model, effort, output style, environment variables, extra plugins, marketplaces, hooks and permission rules. A plugin you turned off stays off. The sandbox, the status line, the deny-guard hook and every template permission rule come from the template, and your extra rules are added to them. Three settings that switch the guardrails off are removed, and the installer lists each one it removes: `disableAllHooks`, `skipDangerousModePermissionPrompt` and `permissions.defaultMode: bypassPermissions`.
+
+When the installer has no terminal to ask (for example when you run it with `!` inside Claude), it keeps the third-party mods you already have instead of removing them.
 
 ### Manual install
 
@@ -184,10 +189,11 @@ These are the same steps the installer runs.
 
 ### Step 0: prepare
 
-Clone this repo. Back up your current `~/.claude/settings.json` if you have one, because step 3 overwrites it. Make sure `jq` is installed, since the install loop and the status line both use it. On Linux, the sandbox also needs `bubblewrap` and `socat`:
+Clone this repo. Back up your current `~/.claude/settings.json` if you have one. Make sure `jq` is installed, since the settings merge, the install loop and the status line all use it. On Linux, the sandbox also needs `bubblewrap` and `socat`. Install Claude Code if it isn't there yet (Anthropic's installer puts `claude` in `~/.local/bin`):
 ```bash
 which jq || brew install jq                         # macOS
 sudo apt install jq rsync bubblewrap socat          # Debian/Ubuntu
+command -v claude || { curl -fsSL https://claude.ai/install.sh -o /tmp/claude-install.sh && bash /tmp/claude-install.sh; }
 ```
 
 ### Step 1: get the Anthropic playground mods
@@ -212,9 +218,14 @@ Run these from inside this repo's folder:
 ```bash
 cp -R mods/vendored-mods/.claude-plugin ~/.claude/mods/vendored-mods/
 mkdir -p ~/.claude/hooks && cp hooks/* ~/.claude/hooks/ && chmod +x ~/.claude/hooks/deny-guard.sh
-sed "s#__HOME__#$HOME#g" settings.json > ~/.claude/settings.json
+jq --arg h "$HOME" 'walk(if type == "string" then gsub("__HOME__"; $h) else . end)' settings.json > /tmp/template.json
+[ -f ~/.claude/settings.json ] || echo '{}' > ~/.claude/settings.json
+jq -n --slurpfile user ~/.claude/settings.json --slurpfile tpl /tmp/template.json -f merge-settings.jq > /tmp/merged.json
+jq -r '.dropped[]' /tmp/merged.json                 # what the merge removed or replaced
+jq '.settings' /tmp/merged.json > ~/.claude/settings.json
 cat claude-md/docs-rule.md >> ~/.claude/CLAUDE.md
 ```
+The merge keeps your own settings and makes the security settings follow the template, as described under [Quick install](#quick-install).
 
 ### Step 4: install every marketplace and plugin
 
@@ -232,7 +243,17 @@ done
 ```
 You can ignore "already added" and "not installed" messages. Each install line should end with `✔ Successfully installed`.
 
-### Step 5: check and start
+### Step 5: install Claude OS
+
+Run these from inside this repo's folder:
+```bash
+rsync -a --delete --exclude tests --exclude __pycache__ --exclude .claude --exclude .gitignore dashboard/ ~/.claude/claude-os/
+mkdir -p ~/.local/bin
+printf '%s\n' '#!/bin/bash' 'exec python3 -I "$HOME/.claude/claude-os/serve.py" --project "$PWD" --open "$@"' > ~/.local/bin/claude-os
+chmod +x ~/.local/bin/claude-os
+```
+
+### Step 6: check and start
 
 ```bash
 bash ~/.claude/hooks/deny-guard-test.sh   # should print: all cases pass

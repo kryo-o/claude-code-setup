@@ -88,7 +88,7 @@ def build_home(root):
     _dot_claude(proj, root / "proj-dot-claude")
 
     _w(cl / "settings.json", {
-        "permissions": {"deny": ["Bash(rm *)"], "ask": ["Bash(gh *)"]},
+        "permissions": {"deny": ["Bash(rm *)"], "ask": ["Bash(gh *)"], "allow": ["mcp__gh__search_code"]},
         "env": {"ANTHROPIC_API_KEY": API_KEY},
         "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [
             {"type": "command", "command": "~/.claude/hooks/deny-guard.sh"}]}]},

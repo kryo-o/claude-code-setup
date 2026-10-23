@@ -30,6 +30,23 @@ class MaskTest(unittest.TestCase):
         for s in ("my-skill", "web-skill", "proj-skill", "local-http", '"gh"'):
             self.assertNotIn(s, self.out, s)
 
+    def test_mcp_names_masked_inside_permission_rules(self):
+        rules = [r["rule"] for r in self.inv["settings"]["rules"]]
+        self.assertIn("mcp__mcp-1__search_code", rules)
+
+    def test_plugins_from_a_personal_local_marketplace_masked(self):
+        # A directory marketplace that is not one of this template's holds your own plugins.
+        for s in ("frozen-b", '"big"', "big skill"):
+            self.assertNotIn(s, self.out, s)
+        ids = {p["id"] for p in self.inv["plugins"]}
+        self.assertIn("plugin-1@local", ids)
+        self.assertIn("skill-", next(s["name"] for s in self.inv["skills"] if s["source"] == "plugin:plugin-1@local"))
+
+    def test_template_local_marketplaces_kept(self):
+        inv = mask({**json.loads(json.dumps(self.real)), "plugins": [
+            {"id": "cache-tax@vendored-mods", "marketplace": "vendored-mods", "frozen": True, "path": None, "proposals": []}]})
+        self.assertEqual(inv["plugins"][0]["id"], "cache-tax@vendored-mods")
+
     def test_public_plugin_names_kept(self):
         kept = ["tool-a@official", "lint", "reviewer"]
         if ".mcp.json" not in helpers.skipped:
@@ -45,7 +62,7 @@ class MaskTest(unittest.TestCase):
 
     def test_same_name_masks_the_same_way(self):
         # Sessions and memory files of one project must still line up after masking.
-        mem = [m["path"] for m in self.inv["memory"] if "/projects/" in m["path"]]
+        mem = [m["path"] for m in self.inv["memory"] if "/.claude/projects/" in m["path"]]
         self.assertTrue(mem and all("/projects/project-1/" in p for p in mem), mem)
 
     def test_personal_proposals_dropped(self):

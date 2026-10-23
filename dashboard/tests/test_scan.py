@@ -31,6 +31,7 @@ class ScanTest(unittest.TestCase):
         self.assertEqual(rules, {
             ("deny", "Bash(rm *)"): "user",
             ("ask", "Bash(gh *)"): "user",
+            ("allow", "mcp__gh__search_code"): "user",
             ("allow", "Bash(npm test)"): "project",
             ("deny", "WebFetch"): "local",
         })

@@ -43,7 +43,17 @@ fi
 use_vendored=yes
 say "Third-party mods (reflect-mod, cache-tax)"
 echo "Reviewed copies ship in this repo, so nothing is downloaded from their authors."
-if ask "Install them?"; then
+if [ ! -t 0 ]; then
+  # No terminal to answer (for example run through Claude's !): keep what is already there.
+  if [ -d "$V/reflect-mod" ] && [ -d "$V/cache-tax" ]; then
+    echo "No terminal to ask, so the mods you already have stay installed."
+    answer=yes
+  else
+    echo "No terminal to ask, so they are skipped. Re-run in a terminal to add them."
+    answer=no
+  fi
+elif ask "Install them?"; then answer=yes; else answer=no; fi
+if [ "$answer" = yes ]; then
   # --delete makes the installed copy match the repo exactly; .in_use is Claude Code's and stays.
   for m in reflect-mod cache-tax; do
     rsync -a --delete --exclude .in_use "$REPO/mods/vendored-mods/$m/" "$V/$m/"
@@ -59,8 +69,16 @@ cp -R "$REPO/mods/vendored-mods/.claude-plugin" "$V/"
 cp "$REPO"/hooks/* "$CL/hooks/"
 chmod +x "$CL/hooks/deny-guard.sh"
 # jq, not sed: a home path containing & or # would break a sed replacement.
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/claude-setup.XXXXXX")"
+trap 'rm -rf "$TMP"' EXIT
 jq --arg h "$HOME" 'walk(if type == "string" then gsub("__HOME__"; $h) else . end)' \
-  "$REPO/settings.json" > "$CL/settings.json"
+  "$REPO/settings.json" > "$TMP/template.json"
+if [ -f "$CL/settings.json" ]; then cp "$CL/settings.json" "$TMP/user.json"; else echo '{}' > "$TMP/user.json"; fi
+# Merge, not overwrite: your preferences stay, the security settings follow the template.
+jq -n --slurpfile user "$TMP/user.json" --slurpfile tpl "$TMP/template.json" \
+  -f "$REPO/merge-settings.jq" > "$TMP/merged.json"
+jq '.settings' "$TMP/merged.json" > "$CL/settings.json"
+jq -r '.dropped[] | "Removed or replaced in your settings: " + .' "$TMP/merged.json"
 if [ "$use_vendored" = no ]; then
   jq 'del(.enabledPlugins["reflect-mod@vendored-mods", "cache-tax@vendored-mods"]) | del(.extraKnownMarketplaces["vendored-mods"])' \
     "$CL/settings.json" > "$CL/settings.json.tmp" && mv "$CL/settings.json.tmp" "$CL/settings.json"

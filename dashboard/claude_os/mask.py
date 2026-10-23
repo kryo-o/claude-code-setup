@@ -4,7 +4,10 @@ so the page looks the same for a screenshot or a demo.
 """
 import re
 
+from .propose import plugin
+
 HOME = "/Users/you"
+TEMPLATE_LOCAL = {"vendored-mods", "claude-code-playground-mods"}
 PROJECT = "~/projects/demo"
 KEEP_FILES = {"CLAUDE.md", "CLAUDE.local.md", "MEMORY.md"}
 
@@ -25,16 +28,31 @@ def mask(inv):
         s = s.replace(real_home, HOME)
         s = re.sub(r"(\.claude/projects/)([^/]+)(/)",lambda m: m.group(1) + project(m.group(2)) + m.group(3), s)
         for real, fake in sorted(names.items(), key=lambda kv: -len(kv[0])):
-            s = re.sub(rf"(?<![\w-]){re.escape(real)}(?![\w-])", fake, s)
+            # "_" counts as a separator, so the name is found inside mcp__<name>__tool rules too.
+            s = re.sub(rf"(?<![A-Za-z0-9-]){re.escape(real)}(?![A-Za-z0-9-])", fake, s)
         return s
 
     for s in inv["sessions"]:
         s["project"] = project(s["project"])
 
+    # A directory marketplace that isn't one of this template's holds your own plugins.
+    plugins = {}
+    for p in inv["plugins"]:
+        if p.get("frozen") and p["marketplace"] not in TEMPLATE_LOCAL:
+            plugins[p["id"]] = p["id"] = f"plugin-{len(plugins) + 1}@local"
+            p["marketplace"], p["path"], p["proposals"] = "local", None, plugin(p)
+
+    def personal(item):
+        src = item["source"]
+        if src.startswith("plugin:") and src[7:] in plugins:
+            item["source"] = "plugin:" + plugins[src[7:]]
+            return True
+        return not src.startswith("plugin:")
+
     for key, word in (("skills", "skill"), ("agents", "agent"), ("commands", "command")):
         n = 0
         for i in inv[key]:
-            if i["source"].startswith("plugin:"):
+            if not personal(i):
                 continue
             n += 1
             names[i["name"]] = f"{word}-{n}"
@@ -43,9 +61,9 @@ def mask(inv):
 
     n = 0
     for m in inv["mcp"]:
-        if not m["source"].startswith("plugin:"):
+        if personal(m):
             n += 1
-            m["name"] = f"mcp-{n}"
+            names[m["name"]] = m["name"] = f"mcp-{n}"
 
     notes = 0
     for m in inv["memory"]:
