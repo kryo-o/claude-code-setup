@@ -2,6 +2,11 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.5] - 2026-10-22
+
+### Changed
+- README: the security layers section is split into the sandbox, permission rules and deny-guard, with a table of what each permission rule covers and why. No settings changed.
+
 ## [1.1.4] - 2026-10-22
 
 ### Fixed
@@ -75,6 +80,7 @@ All notable changes to this template are listed here. The format follows [Keep a
 - Install guide with a loop that reinstalls every marketplace and plugin.
 - `SECURITY.md` with private reporting, plus issue templates for bugs and deny-guard false positives.
 
+[1.1.5]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.5
 [1.1.4]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.4
 [1.1.3]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.3
 [1.1.2]: https://github.com/kryo-o/claude-code-setup/releases/tag/v1.1.2

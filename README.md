@@ -1,6 +1,6 @@
 # Claude Code secure setup template
 
-![Version](https://img.shields.io/badge/version-1.1.4-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.1.5-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
 
 Claude Code's permission rules only match the start of a command. A deny rule for `rm *` doesn't stop `r''m -rf x`, `\rm -rf x` or `for f in x; do rm $f; done`. This template closes that gap and locks down the rest of your machine around Claude.
 
@@ -42,13 +42,42 @@ git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup &&
 
 Each layer misses things the others catch.
 
+#### 1. The sandbox
+
 The sandbox is the actual boundary. With `sandbox.enabled: true` and `allowUnsandboxedCommands: false`, every Bash command runs inside the operating system's sandbox: Seatbelt on macOS, bubblewrap on Linux. Commands can only write to the project folder and temp folders, and network access goes through a filter. `autoAllowBashIfSandboxed` skips most permission prompts, which is safe because the sandbox limits what a command can damage.
 
-Two kinds of commands can't work inside the sandbox: `gh`, which needs your GitHub login, and `git push`, `pull` and `fetch` over SSH, which can't get through the sandbox's network proxy on macOS. `excludedCommands` runs only those outside the sandbox: `git push`, `pull` and `fetch`, plus the `gh` subcommands for repos, releases, pull requests, issues and the API. Any other `gh` command stays sandboxed and fails without your login. `ask` rules make Claude ask before every one of them, so publishing stays your decision. Because these run with your full access, the template also blocks the forms that could run arbitrary code or leak your token: `git --upload-pack`, `--receive-pack` and `--exec` (including abbreviated forms), `git -c` overrides, git environment overrides such as `GIT_SSH_COMMAND`, `git config` keys that run commands, `gh extension`, `gh alias`, `gh auth` commands that touch the token, `gh repo delete`, and `gh api` DELETE calls and GraphQL mutations. Claude also can't edit `.git/hooks` or `.git/config`, so it can't plant a hook that runs on your next push. The exception only applies when the command starts with `git` or `gh`, so start Claude inside the repo folder. A command like `cd repo && git push` stays sandboxed and fails. If you'd rather run these commands yourself, delete the `excludedCommands` line.
+Two kinds of commands can't work inside the sandbox. `gh` needs your GitHub login, and `git push`, `pull` and `fetch` over SSH can't get through the sandbox's network proxy on macOS. `excludedCommands` runs only these outside the sandbox: `git push`, `pull` and `fetch`, plus the `gh` subcommands `repo`, `release`, `pr`, `issue` and `api`. Any other `gh` command stays sandboxed and fails without your login. Claude asks before every one of them, so publishing stays your decision.
 
-Permission rules come next. The `deny` list blocks reads of credentials: SSH keys, cloud credentials, package registry and git tokens, Claude Code's own login on Linux, browser cookies, the keychain, shell history, `.env` files and iCloud. It also blocks `rm`, `sudo`, force-pushes and `curl | bash`. `Edit` deny rules stop Claude from changing its own guardrails and from planting code that runs later: Claude Code's settings, hooks, plugins, mods, skills, agents, commands, rules and global `CLAUDE.md`; shell startup files; git and `gh` config (`~/.gitconfig`, `~/.config/git`, `~/.config/gh`) and `~/.ssh`; and login items (`~/Library/LaunchAgents` on macOS, systemd user units and autostart on Linux). This includes every project's `.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks`, `skills`, `agents`, `commands` and `rules`, and `.mcp.json`. Project settings override user settings, so one planted `.claude/settings.local.json` could otherwise turn off the sandbox or add a hook. Claude Code only asks before writes to `.claude/`, and in auto mode a classifier answers instead of you, so the template denies them outright. The project rules start with `//**/` because a rule like `**/.claude/...` only matches under the current folder. Claude Code also applies `Edit` rules to the sandbox, so shell commands can't write there either. To change any of these files, edit them yourself. The `ask` list makes Claude ask before installing packages, so dependencies don't get added without you noticing. It also makes Claude ask before saving a memory in `~/.claude/projects/*/memory/`. Every later session in that project loads those notes, so a prompt injection saved there would last, and Claude Code otherwise writes them without asking. In headless mode (`claude -p`) the rule acts as a deny, so memories aren't saved there. Project `CLAUDE.md` and `CLAUDE.local.md` files carry the same risk, and they can be committed and spread to everyone who clones the repo, so Claude also asks before editing them. The `ask` rules match any letter case, because macOS treats `claude.md` and `CLAUDE.md` as the same file. `sandbox.filesystem.denyWrite` stops shell commands from writing them in any folder, so edits go through the prompt. `deny-guard.sh` also blocks the common shell forms (`>`, `tee`, `sed -i`, `cp`, `mv`) in any letter case.
+The exclusion only applies when the command starts with `git` or `gh`. A command like `cd repo && git push` stays sandboxed and fails, so start Claude inside the repo folder. If you'd rather run these commands yourself, delete the `excludedCommands` line.
 
-The `deny-guard.sh` hook covers a gap in those rules. Permission rules only match the start of a command, so `for f in x; do rm $f; done` or `r''m` gets past them. The hook searches the whole command, plus any script the command runs, for deletes, `eval`, base64-decoded commands, pipes into a shell and credential paths. Text matching can always be worked around, so treat the hook as a speed bump and rely on the sandbox. Run `bash ~/.claude/hooks/deny-guard-test.sh` to test it.
+These commands run with your full access, so the template blocks everything that could make them run other code or leak your token:
+
+- git options that run a program: `--upload-pack`, `--receive-pack` and `--exec` (including abbreviated forms), `git -c` overrides, and environment overrides such as `GIT_SSH_COMMAND`
+- `git config` keys that run commands, and `git credential`
+- `gh extension`, `gh alias`, the `gh auth` commands that touch the token, and `gh repo delete`
+- `gh api` DELETE calls and GraphQL mutations
+- edits to `.git/hooks` and `.git/config`, including those of submodules and worktrees, so Claude can't plant a hook that runs on your next push
+
+#### 2. Permission rules
+
+| Rule | Covers | Why |
+|---|---|---|
+| `Read` deny | SSH keys, cloud credentials, package registry and git tokens, Claude Code's own login on Linux, browser cookies, the keychain, shell history, `.env` files, iCloud | Keeps secrets out of Claude's reach |
+| `Bash` deny | `rm`, `sudo`, force-pushes, `curl \| bash` | Destructive, or runs code from the internet |
+| `Edit` deny, your machine | Claude Code's settings, hooks, plugins, mods, skills, agents, commands, rules and global `CLAUDE.md`; shell startup files; `~/.gitconfig`, `~/.config/git`, `~/.config/gh` and `~/.ssh`; login items (`~/Library/LaunchAgents` on macOS, systemd user units and autostart on Linux) | Claude can't change its own guardrails or plant code that runs later |
+| `Edit` deny, every project | `.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks`, `skills`, `agents`, `commands` and `rules`, and `.mcp.json` | Project settings override yours, so one planted file could turn off the sandbox or add a hook |
+| `ask` | Package installs | Dependencies don't get added without you noticing |
+| `ask` | Memories in `~/.claude/projects/*/memory/`, and every `CLAUDE.md` and `CLAUDE.local.md` | Every session loads them as instructions, so a prompt injection saved there would last |
+
+Claude Code also applies the `Read` and `Edit` deny rules to the sandbox, so shell commands can't read or write those paths either. To change any of the denied files, edit them yourself.
+
+Without these rules, Claude Code only asks before writes to a project's `.claude/` folder, and in auto mode a classifier answers instead of you. That's why the template denies these writes outright. The project rules start with `//**/` because a rule like `**/.claude/...` only matches under the folder Claude started in.
+
+Memories and `CLAUDE.md` files get an `ask` rule instead of a deny, because you still want Claude to write them. Claude Code otherwise saves memories without asking, and a committed `CLAUDE.md` reaches everyone who clones the repo. The `CLAUDE.md` rules match any letter case, because macOS treats `claude.md` and `CLAUDE.md` as the same file. `sandbox.filesystem.denyWrite` stops shell commands from writing them, so every edit goes through the prompt. In headless mode (`claude -p`), an `ask` rule acts as a deny, so these writes fail there.
+
+#### 3. The deny-guard hook
+
+The `deny-guard.sh` hook covers a gap in those rules. Permission rules only match the start of a command, so `for f in x; do rm $f; done` or `r''m` gets past them. The hook searches the whole command, plus any script the command runs, for deletes, `eval`, base64-decoded commands, pipes into a shell and credential paths. It also blocks the common shell writes to `CLAUDE.md` (`>`, `tee`, `sed -i`, `cp`, `mv`) in any letter case. Text matching can always be worked around, so treat the hook as a speed bump and rely on the sandbox. Run `bash ~/.claude/hooks/deny-guard-test.sh` to test it.
 
 One quirk: the hook decides which scripts to read by file extension. If a harmless command mentions a `.sh` or `.ts` file that happens to contain `eval` or `.env`, the hook blocks it.
 
