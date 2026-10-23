@@ -2,6 +2,20 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-23
+
+### Added
+- `dashboard/`: Claude OS, a read-only local web page over your Claude Code install. It lists settings layers and the file each permission rule comes from, plugins (frozen or auto-updating), skills ranked by size with their pinned model, agents, commands, hooks, MCP servers, `CLAUDE.md` and memory files, session costs, and what cold-cache reloads cost. Changes come as commands or diffs you apply yourself. Python 3 standard library only, with 67 tests covering secret redaction, denied paths, server hardening, cost maths, masking and proposals.
+- `claude-os` command: the installer copies the dashboard to `~/.claude/claude-os` and adds a launcher to `~/.local/bin` that opens it for the current folder. `Edit` deny rules keep Claude out of both, since they run outside the sandbox.
+- `claude-os --mask` hides your username, paths, project names and the names of your own skills, agents and MCP servers, for screenshots and demos.
+- `install.sh` installs Claude Code with Anthropic's installer when `claude` is missing, after asking. Before, it stopped with "Missing: claude". The step has its own tests in `install-claude-test.sh`.
+- `demo/dashboard-gif.sh` turns a screen recording of the dashboard into the README GIF.
+
+### Fixed
+- Re-running `install.sh` replaced your whole `settings.json` with the template, so your model, output style, extra plugins and own permission rules were lost (a backup was kept). It now merges with `merge-settings.jq`: your settings stay, the sandbox, status line, deny-guard hook and template rules follow the template, and settings that switch the guardrails off are removed and listed. Tested in `install-test.sh`.
+- Run without a terminal, for example with `!` inside Claude, the installer took the mods question as "no" and removed `reflect-mod` and `cache-tax`. It now keeps mods that are already installed.
+- `claude-os --mask` showed the names of your own MCP servers inside permission rules such as `mcp__<name>__tool`, and the names of plugins from your own local marketplaces. Both are masked now.
+
 ## [1.1.7] - 2026-10-23
 
 ### Changed

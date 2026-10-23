@@ -11,7 +11,7 @@ say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 ask() { read -r -p "$1 [y/N] " a; [[ "$a" =~ ^[Yy]$ ]]; }
 
 # --- checks ---
-need="claude git jq rsync"
+need="git jq rsync"
 case "$(uname)" in
   Darwin) hint="brew install jq" ;;
   # The Linux sandbox runs commands through bubblewrap and proxies network via socat.
@@ -21,6 +21,9 @@ esac
 for cmd in $need; do
   command -v "$cmd" >/dev/null || { echo "Missing: $cmd. Install with: $hint"; exit 1; }
 done
+# shellcheck source=install-claude.sh
+source "$REPO/install-claude.sh"
+ensure_claude || exit 1
 
 # --- backup ---
 mkdir -p "$CL/hooks" "$V"
@@ -40,7 +43,17 @@ fi
 use_vendored=yes
 say "Third-party mods (reflect-mod, cache-tax)"
 echo "Reviewed copies ship in this repo, so nothing is downloaded from their authors."
-if ask "Install them?"; then
+if [ ! -t 0 ]; then
+  # No terminal to answer (for example run through Claude's !): keep what is already there.
+  if [ -d "$V/reflect-mod" ] && [ -d "$V/cache-tax" ]; then
+    echo "No terminal to ask, so the mods you already have stay installed."
+    answer=yes
+  else
+    echo "No terminal to ask, so they are skipped. Re-run in a terminal to add them."
+    answer=no
+  fi
+elif ask "Install them?"; then answer=yes; else answer=no; fi
+if [ "$answer" = yes ]; then
   # --delete makes the installed copy match the repo exactly; .in_use is Claude Code's and stays.
   for m in reflect-mod cache-tax; do
     rsync -a --delete --exclude .in_use "$REPO/mods/vendored-mods/$m/" "$V/$m/"
@@ -56,8 +69,16 @@ cp -R "$REPO/mods/vendored-mods/.claude-plugin" "$V/"
 cp "$REPO"/hooks/* "$CL/hooks/"
 chmod +x "$CL/hooks/deny-guard.sh"
 # jq, not sed: a home path containing & or # would break a sed replacement.
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/claude-setup.XXXXXX")"
+trap 'rm -rf "$TMP"' EXIT
 jq --arg h "$HOME" 'walk(if type == "string" then gsub("__HOME__"; $h) else . end)' \
-  "$REPO/settings.json" > "$CL/settings.json"
+  "$REPO/settings.json" > "$TMP/template.json"
+if [ -f "$CL/settings.json" ]; then cp "$CL/settings.json" "$TMP/user.json"; else echo '{}' > "$TMP/user.json"; fi
+# Merge, not overwrite: your preferences stay, the security settings follow the template.
+jq -n --slurpfile user "$TMP/user.json" --slurpfile tpl "$TMP/template.json" \
+  -f "$REPO/merge-settings.jq" > "$TMP/merged.json"
+jq '.settings' "$TMP/merged.json" > "$CL/settings.json"
+jq -r '.dropped[] | "Removed or replaced in your settings: " + .' "$TMP/merged.json"
 if [ "$use_vendored" = no ]; then
   jq 'del(.enabledPlugins["reflect-mod@vendored-mods", "cache-tax@vendored-mods"]) | del(.extraKnownMarketplaces["vendored-mods"])' \
     "$CL/settings.json" > "$CL/settings.json.tmp" && mv "$CL/settings.json.tmp" "$CL/settings.json"
@@ -83,6 +104,21 @@ while IFS= read -r p; do
   claude plugin uninstall "$p" </dev/null >/dev/null 2>&1 || true
   claude plugin install "$p" </dev/null || failed+=" $p"
 done < <(jq -r '.enabledPlugins | keys[] | select(endswith("@builtin") | not)' "$S")
+
+# --- Claude OS dashboard and its claude-os command ---
+# Both run outside the sandbox when you start them, so settings.json denies Claude edits to them.
+say "Installing the Claude OS dashboard"
+rsync -a --delete --exclude tests --exclude __pycache__ --exclude .claude --exclude .gitignore \
+  "$REPO/dashboard/" "$CL/claude-os/"
+mkdir -p "$HOME/.local/bin"
+printf '%s\n' '#!/bin/bash' \
+  '# Opens the Claude OS dashboard for the current folder. Installed by claude-code-setup.' \
+  'exec python3 -I "$HOME/.claude/claude-os/serve.py" --project "$PWD" --open "$@"' > "$HOME/.local/bin/claude-os"
+chmod +x "$HOME/.local/bin/claude-os"
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) echo "Run claude-os in any project folder to open the dashboard." ;;
+  *) echo "Add ~/.local/bin to your PATH, then run claude-os in any project folder." ;;
+esac
 
 # --- self-test ---
 say "Testing deny-guard"
