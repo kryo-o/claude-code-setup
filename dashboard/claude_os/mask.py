@@ -39,7 +39,11 @@ def mask(inv):
     plugins = {}
     for p in inv["plugins"]:
         if p.get("frozen") and p["marketplace"] not in TEMPLATE_LOCAL:
-            plugins[p["id"]] = p["id"] = f"plugin-{len(plugins) + 1}@local"
+            real = p["id"]
+            plugins[real] = p["id"] = f"plugin-{len(plugins) + 1}@local"
+            # Hooks and rules can name the plugin or its folder; text() replaces both.
+            names[real] = p["id"]
+            names[real.rsplit("@", 1)[0]] = p["id"].rsplit("@", 1)[0]
             p["marketplace"], p["path"], p["proposals"] = "local", None, plugin(p)
 
     def personal(item):

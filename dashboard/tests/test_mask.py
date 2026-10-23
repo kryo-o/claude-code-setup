@@ -42,6 +42,15 @@ class MaskTest(unittest.TestCase):
         self.assertIn("plugin-1@local", ids)
         self.assertIn("skill-", next(s["name"] for s in self.inv["skills"] if s["source"] == "plugin:plugin-1@local"))
 
+    def test_personal_plugin_name_masked_in_hooks_and_rules(self):
+        real = json.loads(json.dumps(self.real))
+        real["settings"]["hooks"].append({"event": "Stop", "matcher": None, "source": "user",
+                                          "command": "~/.claude/mods/local/frozen-b/run.sh"})
+        real["settings"]["rules"].append({"kind": "allow", "rule": "Skill(frozen-b:big)", "source": "user", "proposals": []})
+        out = json.dumps(mask(real))
+        self.assertNotIn("frozen-b", out)
+        self.assertIn("~/.claude/mods/local/plugin-1/run.sh", out)
+
     def test_template_local_marketplaces_kept(self):
         inv = mask({**json.loads(json.dumps(self.real)), "plugins": [
             {"id": "cache-tax@vendored-mods", "marketplace": "vendored-mods", "frozen": True, "path": None, "proposals": []}]})

@@ -60,7 +60,7 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 | `claude-md/docs-rule.md` | A `CLAUDE.md` rule that makes Claude check Context7 before using a library |
 | `mods/vendored-mods/.claude-plugin/marketplace.json` | A local marketplace for frozen copies of third-party mods |
 | `mods/vendored-mods/reflect-mod/` and `mods/vendored-mods/cache-tax/` | The reviewed code of the two third-party mods, with their MIT licenses |
-| `dashboard/` | Claude OS, a read-only local dashboard of everything installed and what it costs, with 66 tests |
+| `dashboard/` | Claude OS, a read-only local dashboard of everything installed and what it costs, with 67 tests |
 | `demo/dashboard-gif.sh` | Turns a screen recording of the dashboard into `demo/claude-os.gif` |
 
 ## How it works
