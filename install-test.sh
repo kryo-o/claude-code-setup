@@ -113,6 +113,10 @@ else
   check "real run keeps model" '"opus[1m]"' "$(jq -c .model "$F")"
   check "real run keeps vendored mods without a terminal" 'true' "$(jq -c '.enabledPlugins["reflect-mod@vendored-mods"]' "$F")"
   check "real run removes bypassPermissions" 'null' "$(jq -c .permissions.defaultMode "$F")"
+  # claude plugin install turns a plugin back on, so the loop must skip the ones you turned off.
+  check "real run keeps humanizer off" 'false' "$(jq -c '.enabledPlugins["humanizer@humanizer"]' "$F")"
+  grep -q "plugin install humanizer@humanizer" "$H/claude-calls.log" && no "installer reinstalled a plugin you turned off" || ok
+  grep -q "plugin install caveman@caveman" "$H/claude-calls.log" && ok || no "installer installs plugins that are on"
   ls "$H/.claude/settings.json.bak-"* >/dev/null 2>&1 && ok || no "backup written"
   [ -x "$H/.local/bin/claude-os" ] && ok || no "claude-os launcher installed"
   [ -f "$H/.claude/claude-os/serve.py" ] && ok || no "dashboard copied"

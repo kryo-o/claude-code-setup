@@ -1,6 +1,6 @@
 # Claude Code secure setup template
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.2.1-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
 
 Claude Code's permission rules only match the start of a command. A deny rule for `rm *` doesn't stop `r''m -rf x`, `\rm -rf x` or `for f in x; do rm $f; done`. This template closes that gap and locks down the rest of your machine around Claude.
 
@@ -236,7 +236,7 @@ claude plugin marketplace add anthropics/claude-plugins-official   # usually alr
 for m in $(jq -r '.extraKnownMarketplaces[].source | .repo // .path' $S); do
   claude plugin marketplace add "$m"
 done
-for p in $(jq -r '.enabledPlugins | keys[] | select(endswith("@builtin") | not)' $S); do
+for p in $(jq -r '.enabledPlugins | to_entries[] | select(.value == true) | .key | select(endswith("@builtin") | not)' $S); do
   claude plugin uninstall "$p" 2>/dev/null
   claude plugin install "$p"
 done

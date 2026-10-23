@@ -2,6 +2,11 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-10-23
+
+### Fixed
+- Re-running `install.sh` turned back on any plugin you had turned off. The merge kept it off, but the plugin loop then reinstalled every plugin in `enabledPlugins`, and `claude plugin install` enables what it installs. The loop, and the manual Step 4 loop in the README, now install only plugins set to `true`. Covered in `install-test.sh`.
+
 ## [1.2.0] - 2026-10-23
 
 ### Added
