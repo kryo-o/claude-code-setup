@@ -11,7 +11,7 @@ say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 ask() { read -r -p "$1 [y/N] " a; [[ "$a" =~ ^[Yy]$ ]]; }
 
 # --- checks ---
-need="claude git jq rsync"
+need="git jq rsync"
 case "$(uname)" in
   Darwin) hint="brew install jq" ;;
   # The Linux sandbox runs commands through bubblewrap and proxies network via socat.
@@ -21,6 +21,9 @@ esac
 for cmd in $need; do
   command -v "$cmd" >/dev/null || { echo "Missing: $cmd. Install with: $hint"; exit 1; }
 done
+# shellcheck source=install-claude.sh
+source "$REPO/install-claude.sh"
+ensure_claude || exit 1
 
 # --- backup ---
 mkdir -p "$CL/hooks" "$V"
@@ -83,6 +86,21 @@ while IFS= read -r p; do
   claude plugin uninstall "$p" </dev/null >/dev/null 2>&1 || true
   claude plugin install "$p" </dev/null || failed+=" $p"
 done < <(jq -r '.enabledPlugins | keys[] | select(endswith("@builtin") | not)' "$S")
+
+# --- Claude OS dashboard and its claude-os command ---
+# Both run outside the sandbox when you start them, so settings.json denies Claude edits to them.
+say "Installing the Claude OS dashboard"
+rsync -a --delete --exclude tests --exclude __pycache__ --exclude .claude --exclude .gitignore \
+  "$REPO/dashboard/" "$CL/claude-os/"
+mkdir -p "$HOME/.local/bin"
+printf '%s\n' '#!/bin/bash' \
+  '# Opens the Claude OS dashboard for the current folder. Installed by claude-code-setup.' \
+  'exec python3 -I "$HOME/.claude/claude-os/serve.py" --project "$PWD" --open "$@"' > "$HOME/.local/bin/claude-os"
+chmod +x "$HOME/.local/bin/claude-os"
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) echo "Run claude-os in any project folder to open the dashboard." ;;
+  *) echo "Add ~/.local/bin to your PATH, then run claude-os in any project folder." ;;
+esac
 
 # --- self-test ---
 say "Testing deny-guard"

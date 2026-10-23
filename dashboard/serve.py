@@ -8,12 +8,14 @@ import hmac
 import json
 import secrets
 import sys
+import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from claude_os import propose, scan  # noqa: E402
+from claude_os.mask import mask  # noqa: E402
 from claude_os.redact import scrub  # noqa: E402
 
 WEB = Path(__file__).resolve().parent / "web"
@@ -78,13 +80,23 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--project", help="also show this project's settings, skills and MCP servers")
     ap.add_argument("--port", type=int, default=0, help="default: a free port")
+    ap.add_argument("--open", action="store_true", help="open the page in your browser")
+    ap.add_argument("--mask", action="store_true",
+                    help="hide your username, paths, project names and personal skills, for screenshots and demos")
     a = ap.parse_args()
     home = Path.home()
     project = Path(a.project).resolve() if a.project else None
     managed = MANAGED.get(sys.platform)
     token = secrets.token_urlsafe(24)
-    srv = make_server(lambda: propose.attach(scan.scan(home, project, managed)), token, a.port)
-    print(f"Claude OS: http://127.0.0.1:{srv.server_address[1]}/?t={token}\nCtrl+C to stop.", flush=True)
+    def inventory():
+        inv = propose.attach(scan.scan(home, project, managed))
+        return mask(inv) if a.mask else inv
+
+    srv = make_server(inventory, token, a.port)
+    url = f"http://127.0.0.1:{srv.server_address[1]}/?t={token}"
+    print(f"Claude OS: {url}\nCtrl+C to stop.", flush=True)
+    if a.open:
+        webbrowser.open(url)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

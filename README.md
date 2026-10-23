@@ -6,11 +6,15 @@ Claude Code's permission rules only match the start of a command. A deny rule fo
 
 It's a ready-to-use configuration for macOS and Linux (including WSL2). It runs every shell command in a sandbox, keeps Claude away from your credentials, shows what each session costs, makes Claude check current library docs instead of guessing, and installs a short list of reviewed plugins. Use it as is, or keep the security parts and swap the plugins for your own.
 
+It also ships **Claude OS**, a local dashboard for your whole Claude setup: every plugin, skill, agent, hook, MCP server, permission rule and memory file, what each session cost, and which skills could run on a cheaper model. Type `claude-os` in any project folder to open it. It's read-only: every change it suggests is a command you run yourself, so it can't be used to get around the guardrails.
+
 ```bash
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
 ```
 
 ![deny-guard blocking disguised rm, base64 and SSH key commands, then the status line](demo/demo.gif)
+
+![Claude OS: plugins orbiting the dot sphere, spend, prompt cache and the skills deck](demo/claude-os.gif)
 
 > [!IMPORTANT]
 > This setup puts security first, not convenience. Claude will run into blocked commands and extra prompts: `rm`, `sudo`, `eval`, pipes into a shell, edits to its own config and to `CLAUDE.md`, and every `git push`. That's on purpose. Keep `~/.claude/settings.json` as it is, so every project starts locked down. When one project needs more room, loosen it in that project's `.claude/settings.local.json` ([how](#loosening-the-rules-for-one-project)). Commands the template blocks stay blocked in every project, so run those yourself with `!` in front.
@@ -46,7 +50,8 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 
 | File | Purpose |
 |---|---|
-| `install.sh` | One-command installer: backs up your settings, installs everything, runs the tests |
+| `install.sh` | One-command installer: installs Claude Code if it's missing, backs up your settings, installs everything, runs the tests |
+| `install-claude.sh` and `install-claude-test.sh` | The Claude Code install step and its 6 tests |
 | `settings.json` | Permissions, sandbox, hook, status line, plugins and marketplaces |
 | `hooks/deny-guard.sh` | Blocks dangerous Bash commands, including disguised ones |
 | `hooks/deny-guard-test.sh` and `hooks/deny-guard-cases.txt` | 99 test cases for the guard |
@@ -54,7 +59,8 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 | `claude-md/docs-rule.md` | A `CLAUDE.md` rule that makes Claude check Context7 before using a library |
 | `mods/vendored-mods/.claude-plugin/marketplace.json` | A local marketplace for frozen copies of third-party mods |
 | `mods/vendored-mods/reflect-mod/` and `mods/vendored-mods/cache-tax/` | The reviewed code of the two third-party mods, with their MIT licenses |
-| `dashboard/` | Claude OS, a read-only local web page that lists everything installed and what it costs |
+| `dashboard/` | Claude OS, a read-only local dashboard of everything installed and what it costs, with 63 tests |
+| `demo/dashboard-gif.sh` | Turns a screen recording of the dashboard into `demo/claude-os.gif` |
 
 ## How it works
 
@@ -84,7 +90,7 @@ These commands run with your full access, so the template blocks everything that
 |---|---|---|
 | `Read` deny | SSH keys, cloud credentials, package registry and git tokens, Claude Code's own login on Linux, browser cookies, the keychain, shell history, `.env` files, iCloud | Keeps secrets out of Claude's reach |
 | `Bash` deny | `rm`, `sudo`, force-pushes, `curl \| bash` | Destructive, or runs code from the internet |
-| `Edit` deny, your machine | Claude Code's settings, hooks, plugins, mods, skills, agents, commands, rules and global `CLAUDE.md`; shell startup files; `~/.gitconfig`, `~/.config/git`, `~/.config/gh` and `~/.ssh`; login items (`~/Library/LaunchAgents` on macOS, systemd user units and autostart on Linux) | Claude can't change its own guardrails or plant code that runs later |
+| `Edit` deny, your machine | Claude Code's settings, hooks, plugins, mods, skills, agents, commands, rules and global `CLAUDE.md`; the Claude OS dashboard and its `claude-os` command; shell startup files; `~/.gitconfig`, `~/.config/git`, `~/.config/gh` and `~/.ssh`; login items (`~/Library/LaunchAgents` on macOS, systemd user units and autostart on Linux) | Claude can't change its own guardrails or plant code that runs later |
 | `Edit` deny, every project | `.claude/settings.json`, `.claude/settings.local.json`, `.claude/hooks`, `skills`, `agents`, `commands` and `rules`, and `.mcp.json` | Project settings override yours, so one planted file could turn off the sandbox or add a hook |
 | `ask` | Package installs | Dependencies don't get added without you noticing |
 | `ask` | Memories in `~/.claude/projects/*/memory/`, and every `CLAUDE.md` and `CLAUDE.local.md` | Every session loads them as instructions, so a prompt injection saved there would last |
@@ -145,13 +151,16 @@ It shows how full the context window is, what the session has cost and how much 
 
 A local web page that shows everything Claude Code has installed: settings layers and which file each permission rule comes from, plugins (frozen or auto-updating), skills ranked by size with the model each one is pinned to, agents, commands, hooks, MCP servers, `CLAUDE.md` and memory files, and the cost of every session. It also shows how much you paid when an idle chat's prompt cache had gone cold. It needs only Python 3.
 
-Start it in your own terminal, not through Claude:
+The installer copies it to `~/.claude/claude-os` and adds a `claude-os` command to `~/.local/bin`. Run it in your own terminal, not through Claude:
 
 ```bash
-python3 -I dashboard/serve.py --project ~/path/to/a/project
+cd ~/projects/my-app && claude-os           # opens the dashboard for this project in your browser
+claude-os --mask                            # hides your username, paths, project names and own skills
 ```
 
-Then open the link it prints. `--project` is optional and adds that project's settings, skills and MCP servers.
+`claude-os` adds the current folder's settings, skills and MCP servers to the view, and works from any folder. Press `Ctrl+C` to stop it. Use `--mask` for screenshots and screen recordings. It replaces your username, paths, project names and the names of your own skills, agents and MCP servers with generic ones. It keeps public plugin names and every number, and drops proposals that would quote your own files. Without the installer, run `python3 -I dashboard/serve.py --open` from this repo.
+
+The launcher and the dashboard code run outside the sandbox when you start them, so Claude may not edit either of them. Otherwise Claude could plant code that runs with your full access the next time you open the dashboard.
 
 The dashboard never changes anything. Each change it suggests (turn a plugin off, pin a skill to a smaller model, allow an `ask` rule in one project) comes as a command or diff for you to apply, so the guardrails above stay in place. A dashboard that could write `~/.claude/settings.json` would be a way around them. The server listens on `127.0.0.1` only, needs the random token from the printed link, refuses other host names, answers GET only and serves no files from disk. It never opens `.env` files, credentials, keys or shell history, never keeps message text from transcripts, and strips secret-shaped values from what it shows.
 
@@ -167,7 +176,7 @@ Run its tests with `python3 -I -m unittest discover -s dashboard/tests -t dashbo
 git clone https://github.com/kryo-o/claude-code-setup && cd claude-code-setup && bash install.sh
 ```
 
-The installer needs `claude`, `git`, `jq` and `rsync`. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods from their reviewed copies in this repo, adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin and runs the guard tests. Running it again is safe.
+The installer needs `git`, `jq` and `rsync`. If Claude Code isn't installed, it offers to install it with Anthropic's installer from `https://claude.ai/install.sh`. It downloads the script in full over HTTPS before running it, so a cut-off download can't run half a script. On Linux it also needs `bubblewrap` and `socat`, which Claude Code's sandbox uses; on Debian or Ubuntu, install everything with `sudo apt install jq rsync bubblewrap socat`. It backs up your current `settings.json` with a timestamp, asks before installing the two third-party mods from their reviewed copies in this repo, adds the Context7 rule to `~/.claude/CLAUDE.md` without touching your existing rules, installs every plugin, installs Claude OS and its `claude-os` command, and runs the guard tests. Running it again is safe.
 
 ### Manual install
 

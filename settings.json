@@ -44,6 +44,8 @@
       "Edit(~/.claude/commands/**)",
       "Edit(~/.claude/CLAUDE.md)",
       "Edit(~/.claude/rules/**)",
+      "Edit(~/.claude/claude-os/**)",
+      "Edit(~/.local/bin/claude-os)",
       "Edit(~/.claude.json)",
       "Edit(//**/.claude/settings.json)",
       "Edit(//**/.claude/settings.local.json)",

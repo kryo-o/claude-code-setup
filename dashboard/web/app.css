@@ -49,7 +49,10 @@ main { padding: 18px 20px 70px; max-width: 1560px; margin: 0 auto; }
 /* tmux-style status bar */
 footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; gap: 0; align-items: stretch;
   font-size: 11px; letter-spacing: .06em; background: #070d09; border-top: 1px solid var(--line-2); }
-footer > * { padding: 5px 12px; white-space: nowrap; }
+footer { overflow: hidden; }
+footer > * { padding: 5px 12px; white-space: nowrap; flex: none; }
+/* On narrow windows the middle segments give way; the rescan button always stays. */
+footer .seg:not(.on) { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 footer .seg { color: var(--muted); border-right: 1px solid var(--line); }
 footer .seg b { color: var(--text); font-weight: 400; }
 footer .seg.on { background: var(--accent); color: #000; }

@@ -113,6 +113,12 @@ class ScanTest(unittest.TestCase):
         self.assertFalse(any("anth-tool@anth" in w for w in self.inv["warnings"]))
         self.assertTrue(self.by("plugins", "id")["anth-tool@anth"]["installed"])
 
+    def test_project_at_home_is_no_project(self):
+        # claude-os run from ~ would otherwise list ~/.claude/settings.json as a project layer too.
+        inv = scan.scan(self.home, project=self.home)
+        self.assertIsNone(inv["project"])
+        self.assertEqual([l["source"] for l in inv["settings"]["layers"]], ["user", "user-local"])
+
     def test_missing_home_does_not_crash(self):
         inv = scan.scan(Path(self.tmp.name) / "nobody", project=None, managed=None)
         self.assertEqual(inv["skills"], [])

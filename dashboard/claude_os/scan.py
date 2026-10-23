@@ -57,7 +57,8 @@ class Scanner:
     def __init__(self, home, project, managed):
         self.home = Path(home)
         self.cl = self.home / ".claude"
-        self.project = Path(project) if project else None
+        # Your home folder is not a project: its .claude is the user layer.
+        self.project = Path(project) if project and Path(project).resolve() != self.home.resolve() else None
         self.managed = Path(managed) if managed else None
         self.warnings = []
 
