@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude OS</title>
+<link rel="stylesheet" href="/app.css">
+<script src="/lib.js" defer></script>
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span id="logo" aria-hidden="true"></span>
+    <h1>CLAUDE<span>//OS</span><span class="cursor" aria-hidden="true"></span></h1>
+  </div>
+  <p id="status" class="sub">booting…</p>
+  <nav id="tabs" role="tablist"></nav>
+</header>
+<main id="view"></main>
+<dialog id="dlg">
+  <header><h2 id="dlg-title"></h2><button type="button" id="dlg-close" aria-label="Close">×</button></header>
+  <div id="dlg-body"></div>
+</dialog>
+<footer id="bar"><span class="seg on">claude-os</span><span class="fill"></span><button type="button" id="refresh">↻ rescan</button></footer>
+</body>
+</html>

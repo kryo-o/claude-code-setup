@@ -2,6 +2,11 @@
 
 All notable changes to this template are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-23
+
+### Added
+- `dashboard/`: Claude OS, a read-only local web page over your Claude Code install. It lists settings layers and the file each permission rule comes from, plugins (frozen or auto-updating), skills ranked by size with their pinned model, agents, commands, hooks, MCP servers, `CLAUDE.md` and memory files, session costs, and what cold-cache reloads cost. Changes come as commands or diffs you apply yourself. Python 3 standard library only, with 56 tests covering secret redaction, denied paths, server hardening, cost maths and proposals.
+
 ## [1.1.7] - 2026-10-23
 
 ### Changed

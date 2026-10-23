@@ -1,6 +1,6 @@
 # Claude Code secure setup template
 
-![Version](https://img.shields.io/badge/version-1.1.7-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.2.0-blue) ![License: MIT](https://img.shields.io/badge/license-MIT-green) ![Platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)
 
 Claude Code's permission rules only match the start of a command. A deny rule for `rm *` doesn't stop `r''m -rf x`, `\rm -rf x` or `for f in x; do rm $f; done`. This template closes that gap and locks down the rest of your machine around Claude.
 
@@ -54,6 +54,7 @@ Claude reads untrusted text all day: READMEs, issues, web pages, package code an
 | `claude-md/docs-rule.md` | A `CLAUDE.md` rule that makes Claude check Context7 before using a library |
 | `mods/vendored-mods/.claude-plugin/marketplace.json` | A local marketplace for frozen copies of third-party mods |
 | `mods/vendored-mods/reflect-mod/` and `mods/vendored-mods/cache-tax/` | The reviewed code of the two third-party mods, with their MIT licenses |
+| `dashboard/` | Claude OS, a read-only local web page that lists everything installed and what it costs |
 
 ## How it works
 
@@ -139,6 +140,24 @@ Opus | ████░░░░░░ 42% | $1.50 | 5h:12% 7d:30% | ⎇ main | [
 ```
 
 It shows how full the context window is, what the session has cost and how much of your plan's usage limits you've used, so a runaway session is easy to spot. It finds the plugin badges by searching the plugin cache, so they survive plugin updates. It needs `jq`, which comes with macOS 15 and later; on Linux, install it with your package manager.
+
+### Dashboard (Claude OS)
+
+A local web page that shows everything Claude Code has installed: settings layers and which file each permission rule comes from, plugins (frozen or auto-updating), skills ranked by size with the model each one is pinned to, agents, commands, hooks, MCP servers, `CLAUDE.md` and memory files, and the cost of every session. It also shows how much you paid when an idle chat's prompt cache had gone cold. It needs only Python 3.
+
+Start it in your own terminal, not through Claude:
+
+```bash
+python3 -I dashboard/serve.py --project ~/path/to/a/project
+```
+
+Then open the link it prints. `--project` is optional and adds that project's settings, skills and MCP servers.
+
+The dashboard never changes anything. Each change it suggests (turn a plugin off, pin a skill to a smaller model, allow an `ask` rule in one project) comes as a command or diff for you to apply, so the guardrails above stay in place. A dashboard that could write `~/.claude/settings.json` would be a way around them. The server listens on `127.0.0.1` only, needs the random token from the printed link, refuses other host names, answers GET only and serves no files from disk. It never opens `.env` files, credentials, keys or shell history, never keeps message text from transcripts, and strips secret-shaped values from what it shows.
+
+What it can't see: claude.ai projects, connectors and cloud routines (your claude.ai skills do show up, from `~/.claude/skills/synced`), and how many tokens each MCP server's tool list costs per chat. For that, run `/context` in Claude Code. Session costs come from Claude Code's own record; sessions without one are estimated from list prices and marked `~`.
+
+Run its tests with `python3 -I -m unittest discover -s dashboard/tests -t dashboard`. Add `CLAUDE_OS_SMOKE=1` to also scan your real `~/.claude`.
 
 ## Install
 
